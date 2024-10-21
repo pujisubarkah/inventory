@@ -5,7 +5,6 @@ import Footer from './components/Footer';
 import Home from './Home';
 import Dashboard from './components/Dashboard';
 import LoginModal from './components/LoginModal'; // Pastikan ini sudah benar
-import '@fortawesome/fontawesome-free/css/all.min.css';
 
 function App() {
   return (
