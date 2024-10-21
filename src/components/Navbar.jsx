@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import LoginModal from './LoginModal'; // Ensure path is correct
+import CartSummary from './CartSummary'; // Import CartSummary component
 import { FaShoppingCart } from 'react-icons/fa'; // Import cart icon
 import { supabase } from '../supabaseClient'; // Ensure this path is correct
 
 const Navbar = () => {
     const [isModalOpen, setModalOpen] = useState(false); // State for modal
+    const [isCartOpen, setCartOpen] = useState(false); // State for cart visibility
     const [cartItemCount, setCartItemCount] = useState(0); // State for cart item count
     const [user, setUser] = useState(null); // State to store user information
 
     const openModal = () => setModalOpen(true);
     const closeModal = () => setModalOpen(false);
+    const toggleCart = () => setCartOpen(!isCartOpen); // Function to toggle cart visibility
+    const closeCart = () => setCartOpen(false); // Function to close cart
 
     // Function for Logout
     const handleLogout = async () => {
@@ -87,7 +91,7 @@ const Navbar = () => {
 
                         {/* Keranjang (Cart Icon) */}
                         <div className="relative">
-                            <button className="text-white relative">
+                            <button className="text-white relative" onClick={toggleCart}>
                                 <FaShoppingCart size={24} />
                                 {cartItemCount > 0 && (
                                     <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
@@ -123,6 +127,9 @@ const Navbar = () => {
 
             {/* Modal Login */}
             <LoginModal isOpen={isModalOpen} onClose={closeModal} />
+
+            {/* Cart Summary Modal */}
+            {isCartOpen && <CartSummary onClose={() => setCartOpen(false)} />} {/* Menutup modal */}
         </React.Fragment>
     );
 };
