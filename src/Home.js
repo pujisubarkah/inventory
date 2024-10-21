@@ -12,7 +12,7 @@ const Home = () => {
             // Fetch products along with their stock
             const { data: productsData, error: productsError } = await supabase
                 .from('product')
-                .select('*');
+                .select('id, product_name, image_url, quantity_change');
 
             if (productsError) {
                 console.error('Error fetching products:', productsError.message);
@@ -62,7 +62,9 @@ const Home = () => {
                             <p className="text-gray-600">Stok: {product.quantity_change}</p>
                         </div>
                     </div>
-                    <button className="m-4 w-[calc(100%-2rem)] bg-[darkred] hover:bg-red-600 text-white font-bold py-2 rounded">
+                    <button 
+                        onClick={() => openModal(product)}  // Correct modal opening function
+                        className="m-4 w-[calc(100%-2rem)] bg-[darkred] hover:bg-red-600 text-white font-bold py-2 rounded">
                         Buat Permintaan
                     </button>
                 </div>
