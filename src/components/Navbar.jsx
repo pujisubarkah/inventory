@@ -37,7 +37,7 @@ const Navbar = () => {
                                         <a href="/" className="text-white font-bold text-xl font-poppins">Alat Listrik</a>
                                     </li>
                                     <li className="group flex items-center">
-                                        <button onClick={openModal} className="bg-transparent border border-white text-white text-base font-bold py-2 px-5 mx-8 rounded-none hover:bg-white hover:text-red-500 transition duration-300">
+                                        <button onClick={openModal} className="bg-transparent border border-white text-white text-base font-bold py-2 px-5 mx-8 rounded hover:bg-white hover:text-red-500 transition duration-300">
                                             <i className="fas fa-sign-in-alt mr-2"></i> {/* Icon untuk LOGIN */}
                                             LOGIN
                                         </button>
