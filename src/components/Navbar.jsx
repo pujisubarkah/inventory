@@ -72,7 +72,7 @@ const Navbar = () => {
                                     <li className="group flex items-center">
                                         <i className="fas fa-pencil-alt text-white mr-2"></i>
                                         <a href="/" className="text-white font-bold text-xl font-poppins">
-                                            ATK+Cetakan
+                                            Alat Tulis
                                         </a>
                                     </li>
                                     <li className="group flex items-center">
