@@ -1,11 +1,13 @@
 // src/components/LoginModal.js
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient'; // Adjust the path if needed
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirecting
 
 const LoginModal = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null); // Untuk menangani kesalahan login
+  const navigate = useNavigate(); // Gunakan useNavigate untuk redirecting
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -22,6 +24,7 @@ const LoginModal = ({ isOpen, onClose }) => {
     // Reset error sebelum mencoba login
     setError(null);
 
+    // Attempt login with email and password
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -32,8 +35,30 @@ const LoginModal = ({ isOpen, onClose }) => {
       setError('Invalid email or password');
     } else {
       console.log('Logged in successfully:', data);
-      // Redirect to dashboard atau halaman lain setelah login berhasil
-      window.location.href = '/dashboard'; // Contoh redirect
+
+      // Fetch the user's role from the 'profile' table after login
+      const { data: userRoleData, error: roleError } = await supabase
+        .from('profiles') // Menggunakan tabel 'profile'
+        .select('role_id')
+        .eq('user_id', data.user.id) // Menggunakan id dari data login
+        .single(); // Ambil data tunggal
+
+      if (roleError) {
+        console.error('Error fetching user role:', roleError.message);
+        setError('Failed to retrieve user role');
+      } else {
+        // Check the user's role and navigate accordingly
+        if (userRoleData.role_id === 1) {
+          // Jika role_id = 1, arahkan ke dashboard admin
+          navigate('/dashboard'); 
+        } else if (userRoleData.role_id === 2) {
+          // Jika role_id = 2, arahkan ke halaman home user
+          navigate('/');
+        } else {
+          setError('Invalid role'); // Jika role tidak dikenal
+        }
+        onClose(); // Tutup modal setelah login berhasil
+      }
     }
   };
 
