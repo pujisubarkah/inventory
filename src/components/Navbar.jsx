@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LoginModal from './LoginModal'; // Ensure path is correct
 import CartSummary from './CartSummary'; // Import CartSummary component
 import HistorySummary from './HistorySummary'; // Import HistorySummary component
+import { FaSearch } from 'react-icons/fa'; // Import search icon
 import { FaShoppingCart } from 'react-icons/fa'; // Import cart icon
 import { FaHistory } from 'react-icons/fa'; // Import history icon
 import { supabase } from '../supabaseClient'; // Ensure this path is correct
@@ -13,6 +14,7 @@ const Navbar = () => {
     const [cartItemCount, setCartItemCount] = useState(0); // State for cart item count
     const [itemCount, setItemCount] = useState(0); // State for total item count
     const [user, setUser] = useState(null); // State to store user information
+    const [searchQuery, setSearchQuery] = useState(''); // State for search query
 
     const openModal = () => setModalOpen(true);
     const closeModal = () => setModalOpen(false);
@@ -21,6 +23,19 @@ const Navbar = () => {
     const toggleHistory = () => setHistoryOpen(!isHistoryOpen); // Function to toggle cart visibility    
     const closeHistory = () => setHistoryOpen(false); // Function to close cart
 
+  // Handle search query changes
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+};
+
+// Function to handle search action when user presses enter
+const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    // Handle search action here, e.g., send searchQuery to the backend or filter displayed items
+    console.log('Search for:', searchQuery);
+    // Optionally, clear the search after submission
+    setSearchQuery('');
+};
 
     // Function for Logout
     const handleLogout = async () => {
@@ -130,39 +145,21 @@ const Navbar = () => {
                             </a>
                         </div>
 
-                        <div className="flex items-center px-4">
-                            <button
-                                id="hamburger"
-                                name="hamburger"
-                                type="button"
-                                className="block absolute right-4 lg:hidden"
-                            >
-                                <span className="hamburger-line origin-top-left transition duration-300 ease-in-out"></span>
-                                <span className="hamburger-line transition duration-300 ease-in-out"></span>
-                                <span className="hamburger-line origin-bottom-left transition duration-300 ease-in-out"></span>
-                            </button>
-
-                            <nav
-                                id="nav-menu"
-                                className="hidden absolute py-5 bg-white shadow-lg rounded-lg max-w-[250px] w-full right-5 top-full lg:block lg:static lg:bg-transparent lg:max-w-full lg:shadow-none"
-                            >
-                                <ul className="flex flex-col lg:flex-row lg:space-x-8 space-y-4 lg:space-y-0 p-4 lg:p-0">
-                                    <li className="group flex items-center">
-                                        <i className="fas fa-pencil-alt text-white mr-2"></i>
-                                        <a href="/" className="text-white font-bold text-xl font-poppins">
-                                            Alat Tulis
-                                        </a>
-                                    </li>
-                                    <li className="group flex items-center">
-                                        <i className="fas fa-lightbulb text-white mr-2"></i>
-                                        <a href="/" className="text-white font-bold text-xl font-poppins">
-                                            Alat Listrik
-                                        </a>
-                                    </li>
-                                </ul>
-                            </nav>
+                       {/* Search Bar */}
+                       <div className="flex-1 px-4">
+                            <form onSubmit={handleSearchSubmit} className="flex items-center space-x-2">
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={handleSearch}
+                                    className="w-full px-4 py-2 rounded-md border focus:outline-none"
+                                    placeholder="Cari barang atau kategori..."
+                                />
+                                <button type="submit" className="bg-white text-darkred p-2 rounded-md">
+                                    <FaSearch size={18} />
+                                </button>
+                            </form>
                         </div>
-
                         {/* Keranjang (Cart Icon) */}
                         <div className="relative">
                             <button className={`text-white relative ${cartItemCount > 0 ? 'text-yellow-400' : ''}`} onClick={toggleCart}>
