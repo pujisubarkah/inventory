@@ -4,6 +4,8 @@ import { AuthProvider } from './context/AuthContext'; // Import the AuthProvider
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './Home';
+import Persediaan from './Persediaan';
+import Ruangan from './Ruangan';
 import Dashboard from './components/Dashboard';
 import LoginModal from './components/LoginModal'; // Ensure this is correct
 
@@ -17,6 +19,8 @@ function App() {
             <Routes>
               {/* Define your routes */}
               <Route path="/" element={<Home />} />
+              <Route path="/persediaan" element={<Persediaan />} />
+              <Route path="/ruangan" element={<Ruangan />} />
               <Route path="/login" element={<LoginModal />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Routes>

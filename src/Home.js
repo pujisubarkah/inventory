@@ -1,83 +1,64 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from './supabaseClient';
-import OrderFormModal from './components/OrderFormModal'; // Import the modal component
+import React from 'react';
 
 const Home = () => {
-    const [products, setProducts] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
-    const [selectedProduct, setSelectedProduct] = useState(null); // The product to be ordered
+    const navigateToRuangan = () => {
+        window.location.href = '/ruangan';
 
-    useEffect(() => {
-        const fetchProducts = async () => {
-            // Fetch products along with their stock
-            const { data: productsData, error: productsError } = await supabase
-                .from('product')
-                .select('id, product_name, image_url, quantity_change');
-
-            if (productsError) {
-                console.error('Error fetching products:', productsError.message);
-                return;
-            }
-
-            // Map through products and calculate the total quantity_change
-            const updatedData = productsData.map(product => {
-
-                return {
-                    ...product,
-                    image_url: product.image_url.replace('ibb.co', 'ibb.co.com'),
-                };
-            });
-
-            setProducts(updatedData);
-        };
-
-        fetchProducts();
-    }, []);
-
-    // Function to open the modal
-    const openModal = (product) => {
-    setSelectedProduct(product); // Set the product to be ordered
-    setIsModalOpen(true);        // Open the modal
     };
+    
+    const navigateToPersediaan = () => {
+        window.location.href = '/persediaan';
 
-    // Function to close the modal
-    const closeModal = () => {
-    setIsModalOpen(false);       // Close the modal
-    setSelectedProduct(null);    // Clear the selected product
     };
-
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
-            {products.map((product) => (
-                <div key={product.id} className="border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 bg-white">
-                    <div className="flex items-center p-4">
-                        <img 
-                            src={product.image_url} 
-                            alt={product.product_name} 
-                            className="w-20 h-20 object-cover rounded-lg mr-4"
-                        />
-                        <div>
-                            <h3 className="text-lg font-semibold">{product.product_name}</h3>
-                            <p className="text-gray-600">Stok: {product.quantity_change}</p>
+        <div className="home-container" style={{ textAlign: 'center', padding: '40px', fontFamily: 'Poppins, sans-serif', fontWeight: 'bold', backgroundColor: '#f9f9f9' }}>
+            <h1 style={{ marginBottom: '10px', fontSize: '3rem' }}>Layanan BULP LAN</h1>
+            <p style={{ fontStyle: 'italic', color: '#555', marginBottom: '20px' }}>Pesan ruangan dan barang persediaan di Bagian ULP LANRI</p>
+            <div className="flex justify-center items-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 p-6 max-w-4xl">
+                    <div className="border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 bg-white p-8">
+                        <div className="flex items-center mb-4">
+                            <img 
+                                src="https://sp-ao.shortpixel.ai/client/q_lossy,ret_img,w_1000,h_658/http://limus.id/wp-content/uploads/2018/11/WhatsApp-Image-2018-11-30-at-16.29.512-1000x658.jpeg"
+                                alt="Layanan BMN, Permintaan Barang Persediaan"
+                                className="w-20 h-20 object-cover rounded-lg mr-4"
+                            />
+                            <div>
+                                <h3 className="text-lg font-semibold">PERSEDIAAN</h3>
+                                <p className="text-gray-600">Layanan BMN</p>
+                            </div>
                         </div>
+                        <button 
+                            onClick={navigateToPersediaan}
+                            className="w-full bg-[darkred] hover:bg-red-600 text-white font-bold py-2 rounded">
+                            Permintaan Barang
+                        </button>
                     </div>
-                    <button 
-                        onClick={() => openModal(product)}  // Correct modal opening function
-                        className="m-4 w-[calc(100%-2rem)] bg-[darkred] hover:bg-red-600 text-white font-bold py-2 rounded">
-                        Buat Permintaan
-                    </button>
+
+                    <div className="border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 bg-white p-8">
+                        <div className="flex items-center mb-4">
+                            <img 
+                                src="https://cms.workfrom.id/wp-content/uploads/2023/03/10.-ruang-rapat-minimalis.jpg"
+                                alt="Layanan Rumah Tangga Peminjaman Ruangan"
+                                className="w-20 h-20 object-cover rounded-lg mr-4"
+                            />
+                            <div>
+                                <h3 className="text-lg font-semibold">RUANGAN</h3>
+                                <p className="text-gray-600">Layanan RT</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={navigateToRuangan}
+                            className="w-full bg-[darkred] hover:bg-red-600 text-white font-bold py-2 rounded"
+                            >
+                            Peminjaman Ruangan
+                        </button>
+                    </div>
                 </div>
-            ))}
-            {/* Modal component */}
-            <OrderFormModal 
-                product={selectedProduct} 
-                isOpen={isModalOpen} 
-                onClose={closeModal} 
-            />
+            </div>
         </div>
     );
 };
 
 export default Home;
-
