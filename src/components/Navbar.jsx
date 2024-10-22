@@ -26,17 +26,55 @@ const Navbar = () => {
         }
     };
 
-    // Effect to check user status
+    // Effect to check user status and fetch cart item count
     useEffect(() => {
         const getSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user || null);
+            const currentUser = session?.user || null;
+            setUser(currentUser);
+
+            if (currentUser) {
+                // Fetch cart items for the logged-in user
+                const { data, error } = await supabase
+                    .from('user_cart_summary') // Tabel yang menyimpan data keranjang
+                    .select('quantity') // Ambil kolom quantity
+                    .eq('user_id', currentUser.id); // Filter berdasarkan user_id
+
+                if (error) {
+                    console.error('Error fetching cart items:', error.message);
+                } else {
+                    // Hitung total item dalam keranjang
+                    const totalItems = data.reduce((acc, item) => acc + item.quantity, 0);
+                    setCartItemCount(totalItems); // Update state cartItemCount
+                }
+            }
         };
 
         getSession(); // Call getSession when the component mounts
 
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-            setUser(session?.user || null); // Set user or null if no session
+            const currentUser = session?.user || null;
+            setUser(currentUser);
+            
+            // Ulangi logika pengambilan data keranjang setelah login/logout
+            if (currentUser) {
+                const fetchCartData = async () => {
+                    const { data, error } = await supabase
+                        .from('user_cart_summary')
+                        .select('quantity')
+                        .eq('user_id', currentUser.id);
+
+                    if (error) {
+                        console.error('Error fetching cart items:', error.message);
+                    } else {
+                        const totalItems = data.reduce((acc, item) => acc + item.quantity, 0);
+                        setCartItemCount(totalItems);
+                    }
+                };
+                fetchCartData();
+            } else {
+                setCartItemCount(0); // Reset cart count if user logs out
+            }
         });
 
         return () => {
@@ -91,7 +129,7 @@ const Navbar = () => {
 
                         {/* Keranjang (Cart Icon) */}
                         <div className="relative">
-                            <button className="text-white relative" onClick={toggleCart}>
+                            <button className={`text-white relative ${cartItemCount > 0 ? 'text-yellow-400' : ''}`} onClick={toggleCart}>
                                 <FaShoppingCart size={24} />
                                 {cartItemCount > 0 && (
                                     <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
