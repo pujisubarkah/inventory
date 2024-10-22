@@ -62,7 +62,8 @@ const Navbar = () => {
                     const { data, error } = await supabase
                         .from('user_cart_summary')
                         .select('quantity')
-                        .eq('user_id', currentUser.id);
+                        .eq('user_id', currentUser.id)
+                        .eq('status','Add to Cart');
 
                     if (error) {
                         console.error('Error fetching cart items:', error.message);
