@@ -28,9 +28,11 @@ const OrderFormModal = ({ product, isOpen, onClose }) => {
             const { error } = await supabase
                 .from('cart_product')  // Assuming your table is called 'cart'
                 .insert({
-                    user_id: user.id,  // Foreign key from auth.users
+                    // Foreign key from auth.users
                     product_id: product.id,
-                    quantity,
+                    quantity: quantity,
+                    user_id: user.id,
+                    status_id: (await supabase.from('order_status').select('id').eq('status', 'Add to Cart').single()).data.id,  // Get the id for 'Add to Cart' status
                 });
 
             if (error) {
