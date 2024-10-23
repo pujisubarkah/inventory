@@ -149,7 +149,7 @@ const Pesanan = () => {
             </div>
         );
     }
-    
+
     return (
         <Sidebar>
         <div>
@@ -235,6 +235,7 @@ const Pesanan = () => {
                     />
                 )}
                 {message && <p className="text-center text-gray-500 mt-4">{message}</p>}
+                <br></br><br></br>
             </div>
 
             {showModalAdd && (

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LoginModal from './LoginModal'; // Ensure path is correct
 import CartSummary from './CartSummary'; // Import CartSummary component
 import HistorySummary from './HistorySummary'; // Import HistorySummary component
-import { FaShoppingCart } from 'react-icons/fa'; // Import cart icon
-import { FaHistory } from 'react-icons/fa'; // Import history icon
+import { FaShoppingCart, FaHistory, FaDashcube } from 'react-icons/fa'; // Import cart icon
 import { supabase } from '../supabaseClient'; // Ensure this path is correct
 
 const Navbar = () => {
@@ -40,6 +39,17 @@ const Navbar = () => {
         const getSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             const currentUser = session?.user || null;
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('role_id')
+                .eq('user_id', currentUser.id)
+                .single();
+
+            if (profileError) {
+                console.error('Error fetching user profile:', profileError.message);
+            } else {
+                currentUser.role_id = profileData.role_id;
+            }
             setUser(currentUser);
 
             if (currentUser) {
@@ -158,6 +168,18 @@ const Navbar = () => {
                                             )}
                                         </button>
                                     </div>
+
+                                    {/* Dashboard Button for Admin */}
+                                    {user.role_id === 1 && (
+                                        <div className="relative">
+                                        <a
+                                            href="/dashboard"
+                                            className="text-white relative"
+                                        >
+                                            <FaDashcube size={24} />
+                                        </a>
+                                        </div>
+                                    )}
                                 </>
                             )}
 
