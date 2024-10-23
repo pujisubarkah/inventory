@@ -1,32 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from '../supabaseClient';
 import ReactPaginate from "react-paginate";
-import AddProductModal from "./AddProductModal"; 
-import EditProductModal from "./EditProductModal";
 import * as XLSX from 'xlsx'; 
-import { FaFileExcel } from 'react-icons/fa';  
-import { FaEdit, FaTrash } from 'react-icons/fa';
+import { FaFileExcel } from 'react-icons/fa'; 
 import { FaBell } from 'react-icons/fa';
 import Sidebar from "./Sidebar";
 
 
 const Pesanan = () => {
-    const [products, setProducts] = useState([]);
+    const [order, setOrder] = useState([]);
     const [page, setPage] = useState(0);
     const [limit, setLimit] = useState(10);
     const [totalPage, setTotalPage] = useState(0);
     const [totalRow, setTotalRow] = useState(0);
     const [message, setMessage] = useState("");
-    const [showModalAdd, setShowModalAdd] = useState(false);
-    const [showModalEdit, setShowModalEdit] = useState(false);
-    const [modalId, setModalId] = useState("");
     const [notificationCount, setNotificationCount] = useState(0);
 
-    useEffect(() => {
-        getProducts();
-    }, [page, showModalAdd, showModalEdit]);
 
-    const getProducts = async () => {
+    useEffect(() => {
+        getOrder();
+    }, [page]);
+
+    const getOrder = async () => {
         try {
             const { data, error, count } = await supabase
                 .from('user_cart_summary')
@@ -35,11 +30,11 @@ const Pesanan = () => {
 
             if (error) throw error;
 
-            setProducts(data);
+            setOrder(data);
             setTotalRow(count);
             setTotalPage(Math.ceil(count / limit));
         } catch (error) {
-            console.error('Error fetching products:', error.message);
+            console.error('Error fetching order:', error.message);
         }
     };
 
@@ -52,64 +47,16 @@ const Pesanan = () => {
         }
     };
 
-    const deleteProduct = async (id) => {
-        try {
-            const { error } = await supabase
-                .from('products')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-
-            getProducts();
-        } catch (error) {
-            console.error('Error deleting product:', error.message);
-        }
-    };
-
-    const handleAddProduct = async (newProduct) => {
-        try {
-            const { error } = await supabase
-                .from('products')
-                .insert(newProduct);
-
-            if (error) throw error;
-
-            setShowModalAdd(false);
-            getProducts();
-        } catch (error) {
-            console.error('Error adding product:', error.message);
-        }
-    };
-
-    const handleEditProduct = async (updatedProduct) => {
-        try {
-            const { error } = await supabase
-                .from('products')
-                .update(updatedProduct)
-                .eq('id', modalId);
-
-            if (error) throw error;
-
-            setShowModalEdit(false);
-            getProducts();
-        } catch (error) {
-            console.error('Error editing product:', error.message);
-        }
-    };
-
     const exportToExcel = () => {
-        const worksheetData = products.map(product => ({
-            'Name': product.product_name,
-            'Stock Quantity': product.product_stock && product.product_stock.length > 0 ? 
-                product.product_stock.reduce((total, stock) => total + stock.quantity_change, 0) 
-                : 0,
+        const worksheetData = order.map(order => ({
+            'Produk': order.product_name,
+            'Jumlah Pesanan': order.quantity,
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(worksheetData);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
-        XLSX.writeFile(workbook, 'Products_List.xlsx');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+        XLSX.writeFile(workbook, 'Orders_List.xlsx');
     };
 
 
@@ -150,6 +97,24 @@ const Pesanan = () => {
         );
     }
 
+    const orderStatusOptions = ["Add to Cart", "Diproses", "Tersedia", "Selesai", "Ditolak"];
+    
+    const handleQuantityChange = async (itemId, newQuantity) => {
+        const { error } = await supabase
+            .from('cart_product')
+            .update({ final_quantity: newQuantity })
+            .eq('id', itemId);
+
+        if (error) {
+            console.error('Error updating quantity:', error.message);
+            alert('Gagal mengubah jumlah: ' + error.message);
+        } else {
+            setOrder(order.map(item => item.id === itemId ? { ...item, final_quantity: newQuantity } : item));
+        }
+    };
+
+
+
     return (
         <Sidebar>
         <div>
@@ -173,36 +138,59 @@ const Pesanan = () => {
                         <thead>
                             <tr>
                                 <th className="border-b text-base dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">No</th>
-                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Kode Barang</th>
+                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Tanggal</th>
+                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Nama Pemesan</th>
+                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Unit Kerja</th>
+                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Kode Barang</th>
                                 <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Nama Barang</th>
                                 <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Permintaan</th>
-                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Aksi</th>
+                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Diterima</th>
+                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {products.map((product, index) => (
-                                <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
+                            {order.map((order, index) => (
+                                <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                                     <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{index + 1}</td>
-                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{product.product_code}</td>
-                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{product.product_name}</td>
-                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{product.quantity}
-                                       
+                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{order.created_at.split('T')[0]}</td>
+                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{order.nama_lengkap}</td>
+                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{order.unit_kerja}</td>
+                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{order.product_code}</td>
+                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{order.product_name}</td>
+                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{order.quantity}</td>
+                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>
+                                        <input
+                                            type="number"
+                                            value={order.final_quantity}
+                                            onChange={(e) => handleQuantityChange(order.id, e.target.value)}
+                                            className="w-full text-left"
+                                                />
                                     </td>
-                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold flex" style={{ fontFamily: 'Helvetica, sans-serif' }}>
-                                        <button 
-                                            onClick={() => { setModalId(product.id); setShowModalEdit(true); }} 
-                                            className="text-blue-600 hover:text-blue-500"
-                                            aria-label="Edit"
+                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>
+                                        <select
+                                            value={order.status_id}
+                                            onChange={async (e) => {
+                                                const newStatusId = e.target.value;
+                                                const { error } = await supabase
+                                                    .from('cart_product')
+                                                    .update({ status_id: newStatusId })
+                                                    .eq('id', order.id);
+
+                                                if (error) {
+                                                    console.error('Error updating status:', error.message);
+                                                    alert('Gagal mengubah status: ' + error.message);
+                                                } else {
+                                                    setOrder(order.map(item => item.id === order.id ? { ...item, status_id: newStatusId } : item));
+                                                }
+                                            }}
+                                            className="w-full text-left"
                                         >
-                                            <FaEdit />
-                                        </button>
-                                        <button 
-                                            onClick={() => deleteProduct(product.id)} 
-                                            className="text-red-600 hover:text-red-500" 
-                                            aria-label="Delete"
-                                        >
-                                            <FaTrash />
-                                        </button>
+                                            {orderStatusOptions.map((statusOption) => (
+                                                <option key={statusOption} value={statusOption}>
+                                                    {statusOption}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </td>
                                 </tr>
                             ))}
@@ -237,25 +225,6 @@ const Pesanan = () => {
                 {message && <p className="text-center text-gray-500 mt-4">{message}</p>}
                 <br></br><br></br>
             </div>
-
-            {showModalAdd && (
-                <AddProductModal 
-                    show={showModalAdd} 
-                    onClose={() => setShowModalAdd(false)} 
-                    onSubmit={handleAddProduct}
-                    visible={showModalAdd}
-                />
-            )}
-
-            {showModalEdit && (
-                <EditProductModal 
-                    show={showModalEdit} 
-                    onClose={() => setShowModalEdit(false)} 
-                    onSubmit={handleEditProduct} 
-                    productId={modalId}
-                    visible={showModalEdit}
-                />
-            )}
         </div>
         </Sidebar>
     );
