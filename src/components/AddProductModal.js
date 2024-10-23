@@ -5,6 +5,7 @@ import Resizer from 'react-image-file-resizer';
 const AddProductModal = ({ visible, onClose }) => {
     const [productName, setProductName] = useState('');
     const [productCode, setProductCode] = useState('');
+    const [productCategory, setProductCategory] = useState('');
     const [quantity, setQuantity] = useState(0);
     const [imageFile, setImageFile] = useState(null);
 
@@ -61,6 +62,7 @@ const AddProductModal = ({ visible, onClose }) => {
                 .insert([{ 
                     product_name: productName, 
                     product_code: productCode, 
+                    category_name: productCategory,
                     image_url: uploadedImageUrl 
                 }])
                 .select();
@@ -82,6 +84,7 @@ const AddProductModal = ({ visible, onClose }) => {
 
             // Reset field form
             setProductName('');
+            setProductCategory('');
             setProductCode('');
             setQuantity(0);
             setImageFile(null);
@@ -121,6 +124,16 @@ const AddProductModal = ({ visible, onClose }) => {
                             type="text"
                             value={productName}
                             onChange={(e) => setProductName(e.target.value)}
+                            required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2">Product Name:</label>
+                        <input
+                            type="text"
+                            value={productCategory}
+                            onChange={(e) => setProductCategory(e.target.value)}
                             required
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />

@@ -50,7 +50,7 @@ const LoginModal = ({ isOpen, onClose }) => {
         // Check the user's role and navigate accordingly
         if (userRoleData.role_id === 1) {
           // Jika role_id = 1, arahkan ke dashboard admin
-          navigate('/Sidebar'); 
+          navigate('/dashboard'); 
         } else if (userRoleData.role_id === 2) {
           // Jika role_id = 2, arahkan ke halaman home user
           navigate('/');

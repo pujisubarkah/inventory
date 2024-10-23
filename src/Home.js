@@ -12,11 +12,11 @@ const Home = () => {
     };
 
     return (
-        <div className="home-container" style={{ textAlign: 'center', padding: '40px', fontFamily: 'Poppins, sans-serif', fontWeight: 'bold', backgroundColor: '#f9f9f9' }}>
+        <div className="home-container" style={{ textAlign: 'center', padding: '40px', fontFamily: 'Poppins, sans-serif', fontWeight: 'bold', backgroundColor: '#f9f9f9', width: '100%' }}>
             <h1 style={{ marginBottom: '10px', fontSize: '3rem' }}>Layanan BULP LAN</h1>
             <p style={{ fontStyle: 'italic', color: '#555', marginBottom: '20px' }}>Pesan ruangan dan barang persediaan di Bagian ULP LANRI</p>
             <div className="flex justify-center items-center">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 p-6 max-w-4xl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 p-6 w-full max-w-4xl">
                     <div className="border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 bg-white p-8">
                         <div className="flex items-center mb-4">
                             <img 

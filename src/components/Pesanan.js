@@ -112,6 +112,44 @@ const Pesanan = () => {
         XLSX.writeFile(workbook, 'Products_List.xlsx');
     };
 
+
+    const [user, setUser] = useState(null); // State to store user information
+
+    useEffect(() => {
+        const checkUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('role_id')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (error) {
+                    console.error('Error fetching profile:', error.message);
+                    setUser(null);
+                } else if (profile.role_id === 1) {
+                    setUser(user);
+                } else {
+                    setUser(null);
+                }
+            } else {
+                setUser(null);
+            }
+        };
+
+        checkUser();
+    }, []);
+
+    if (!user) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen text-center p-4 w-full">
+                <img src="https://img.freepik.com/premium-vector/mobile-login-flat-design-vector-illustration_1288538-7537.jpg?semt=ais_hybrid" alt="Login required illustration" className="w-1/2 mb-4"  style={{ marginBottom: '20px', maxWidth: '20%', height: 'auto', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
+                <p className="text-xl font-semibold">Anda harus login sebagai admin untuk mengakses dashboard</p>
+            </div>
+        );
+    }
+    
     return (
         <Sidebar>
         <div>

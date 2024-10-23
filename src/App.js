@@ -7,7 +7,6 @@ import Home from './Home';
 import Persediaan from './Persediaan';
 import Ruangan from './Ruangan';
 import Dashboard from './components/Dashboard';
-import Sidebar from './components/Sidebar'; 
 import Pesanan from './components/Pesanan'; 
 import LoginModal from './components/LoginModal'; 
 
@@ -23,17 +22,8 @@ function App() {
               <Route path="/persediaan" element={<Persediaan />} />
               <Route path="/ruangan" element={<Ruangan />} />
               <Route path="/login" element={<LoginModal />} />
-              {/* Wrap Dashboard in Sidebar */}
-              <Route path="/dashboard" element={
-              
-                  <Dashboard />
-              
-              } />
-              <Route path="/pesanan" element={
-              
-                  <Pesanan />
-              
-              } />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/pesanan" element={<Pesanan />} />
             </Routes>
           </main>
           <Footer />

@@ -85,9 +85,14 @@ const Home = () => {
 
     if (!user) {
         return (
-            <div className="flex flex-col items-center justify-center h-screen">
-                <img src="https://img.freepik.com/premium-vector/mobile-login-flat-design-vector-illustration_1288538-7537.jpg?semt=ais_hybrid" alt="Login required illustration" className="w-1/2 mb-4"  style={{ marginBottom: '20px', maxWidth: '20%', height: 'auto', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
-                <p className="text-xl font-semibold">Anda harus login untuk melihat barang persediaan yang tersedia</p>
+            <div className="flex flex-col items-center justify-center h-screen text-center p-4 w-full">
+            <img 
+                src="https://img.freepik.com/premium-vector/mobile-login-flat-design-vector-illustration_1288538-7537.jpg?semt=ais_hybrid" 
+                alt="Login required illustration" 
+                className="w-full max-w-xs mb-4" 
+                style={{ height: 'auto' }} 
+            />
+            <p className="text-xl font-semibold mt-4">Anda harus login untuk melihat barang persediaan yang tersedia</p>
             </div>
         );
     }
