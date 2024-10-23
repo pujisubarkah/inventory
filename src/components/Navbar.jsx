@@ -133,29 +133,33 @@ const Navbar = () => {
                         </div>
 
                         <div className="flex items-center space-x-4">
-                            {/* Keranjang (Cart Icon) */}
-                            <div className="relative">
-                                <button className={`text-white relative ${cartItemCount > 0 ? 'text-yellow-400' : ''}`} onClick={toggleCart}>
-                                    <FaShoppingCart size={24} />
-                                    {cartItemCount > 0 && (
-                                        <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                                            {cartItemCount}
-                                        </span>
-                                    )}
-                                </button>
-                            </div>
+                            {user && (
+                                <>
+                                    {/* Keranjang (Cart Icon) */}
+                                    <div className="relative">
+                                        <button className={`text-white relative ${cartItemCount > 0 ? 'text-yellow-400' : ''}`} onClick={toggleCart}>
+                                            <FaShoppingCart size={24} />
+                                            {cartItemCount > 0 && (
+                                                <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                                    {cartItemCount}
+                                                </span>
+                                            )}
+                                        </button>
+                                    </div>
 
-                            {/* Histori (History Icon) */}
-                            <div className="relative">
-                                <button className={`text-white relative ${itemCount > 0 ? 'text-yellow-400' : ''}`} onClick={toggleHistory}>
-                                    <FaHistory size={24} />
-                                    {itemCount > 0 && (
-                                        <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                                            {itemCount}
-                                        </span>
-                                    )}
-                                </button>
-                            </div>
+                                    {/* Histori (History Icon) */}
+                                    <div className="relative">
+                                        <button className={`text-white relative ${itemCount > 0 ? 'text-yellow-400' : ''}`} onClick={toggleHistory}>
+                                            <FaHistory size={24} />
+                                            {itemCount > 0 && (
+                                                <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                                    {itemCount}
+                                                </span>
+                                            )}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
 
                             {/* Login/Logout Section */}
                             {user ? (
