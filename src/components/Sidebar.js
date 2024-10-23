@@ -31,7 +31,7 @@ const Sidebar = ({ children }) => {
               <div className='flex gap-x-4 items-center'>
                 <span className='bg-transparent rounded p-2.5 m-2'>
                   <img 
-                    src="/lan.png" // Ganti dengan path gambar Anda
+                    src="/admin.svg" // Ganti dengan path gambar Anda
                     alt="Icon persediaan" // Deskripsi gambar
                     className="w-12 h-12 ml-3" // Ukuran gambar dan margin kanan
                   />
