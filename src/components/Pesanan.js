@@ -3,13 +3,14 @@ import { supabase } from '../supabaseClient';
 import ReactPaginate from "react-paginate";
 import AddProductModal from "./AddProductModal"; 
 import EditProductModal from "./EditProductModal";
-import Sidebar from "./Sidebar";
 import * as XLSX from 'xlsx'; 
 import { FaFileExcel } from 'react-icons/fa';  
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { FaBell } from 'react-icons/fa';
+import Sidebar from "./Sidebar";
 
-const Dashboard = () => {
+
+const Pesanan = () => {
     const [products, setProducts] = useState([]);
     const [page, setPage] = useState(0);
     const [limit, setLimit] = useState(10);
@@ -28,8 +29,8 @@ const Dashboard = () => {
     const getProducts = async () => {
         try {
             const { data, error, count } = await supabase
-                .from('products')
-                .select('id, product_name, product_code, product_stock(quantity_change)', { count: 'exact' })
+                .from('user_cart_summary')
+                .select('*')
                 .range(page * limit, (page + 1) * limit - 1);
 
             if (error) throw error;
@@ -117,12 +118,7 @@ const Dashboard = () => {
             <div className="w-full mt-24">
                 <div className="flex justify-between w-11/12 mx-auto ">
                     <div className="w-1/3">
-                        <button onClick={() => setShowModalAdd(true)} className="py-2 px-3 font-medium text-white rounded shadow flex items-center"
-                        style={{ backgroundColor: '#a2003b', transition: 'background-color 0.3s' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#900028'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#a2003b'}>
-                            Tambah Produk
-                        </button>
+                        
                     </div>
                     <div className="relative">
                         <FaBell className="h-6 w-6 text-gray-700" />
@@ -141,7 +137,7 @@ const Dashboard = () => {
                                 <th className="border-b text-base dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">No</th>
                                 <th className="border-b text-base dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Kode Barang</th>
                                 <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Nama Barang</th>
-                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Jumlah Stok</th>
+                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Permintaan</th>
                                 <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Aksi</th>
                             </tr>
                         </thead>
@@ -151,10 +147,8 @@ const Dashboard = () => {
                                     <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{index + 1}</td>
                                     <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{product.product_code}</td>
                                     <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{product.product_name}</td>
-                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>
-                                        {product.product_stock && product.product_stock.length > 0 ? 
-                                            product.product_stock.reduce((total, stock) => total + stock.quantity_change, 0) 
-                                            : 0}
+                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{product.quantity}
+                                       
                                     </td>
                                     <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold flex" style={{ fontFamily: 'Helvetica, sans-serif' }}>
                                         <button 
@@ -228,4 +222,4 @@ const Dashboard = () => {
     );
 };
 
-export default Dashboard;
+export default Pesanan;
