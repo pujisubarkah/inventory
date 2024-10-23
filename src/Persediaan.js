@@ -98,7 +98,7 @@ const Home = () => {
     }
 
     return (
-        <div className="p-4">
+        <div className="p-4 w-full">
             {/* Category Filter and Search Bar Container */}
             <div className="flex justify-end mb-4 space-x-4">
                 {/* Category Filter */}
