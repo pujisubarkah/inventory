@@ -47,6 +47,7 @@ const HistorySummary = ({ onClose }) => {
         html2pdf().from(element).set(options).save();
     };
 
+    // Define handleCompleteItem BEFORE returning JSX
     const handleCompleteItem = async (itemId) => {
         setSelectedItem(itemId);
         setIsRatingModalOpen(true);
@@ -54,7 +55,7 @@ const HistorySummary = ({ onClose }) => {
         setComment('');
 
         // Insert the completed item into the completed_cart table
-        const { data, error: insertError } = await supabase
+        const { error: insertError } = await supabase
             .from('completed_cart')
             .insert([{ 
                 user_id: user.id, 
@@ -68,7 +69,7 @@ const HistorySummary = ({ onClose }) => {
 
         // Remove the item from the cart_product table
         const { error: deleteError } = await supabase
-            .from('cart_product')  // Menghapus dari tabel asli
+            .from('cart_product')
             .delete()
             .eq('product_id', itemId)
             .eq('user_id', user.id);
@@ -89,6 +90,11 @@ const HistorySummary = ({ onClose }) => {
         } else {
             setCartItems(updatedData); // Update the cartItems after deleting the completed item
         }
+    };
+
+    // Define handleStarClick BEFORE returning JSX
+    const handleStarClick = (value) => {
+        setRating(value);
     };
 
     const handleRatingSubmit = async () => {
@@ -125,10 +131,6 @@ const HistorySummary = ({ onClose }) => {
             setShow(false);
             onClose();
         }
-    };
-
-    const handleStarClick = (value) => {
-        setRating(value);
     };
 
     if (loading || !show) return null; // Don't render if loading or modal is not shown
