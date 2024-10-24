@@ -16,7 +16,7 @@ const CartSummary = ({ onClose }) => {
                     .from('user_cart_summary') // Mengambil data dari view
                     .select('*')
                     .eq('user_id', user.id) // Filter berdasarkan user_id
-                    .eq('status','Add to Cart');  // Get the id for 'Add to Cart' status
+                    .eq('status', 'Add to Cart'); // Filter status 'Add to Cart'
 
                 if (error) {
                     console.error('Error fetching cart items:', error.message);
@@ -29,7 +29,6 @@ const CartSummary = ({ onClose }) => {
 
         fetchCartItems();
     }, [user]);
-
 
     const handleQuantityChange = async (itemId, newQuantity) => {
         const { error } = await supabase
@@ -60,7 +59,7 @@ const CartSummary = ({ onClose }) => {
     };
 
     const downloadPDF = () => {
-        const element = document.getElementById('cart-summary'); // Ambil elemen yang akan dicetak
+        const element = document.getElementById('cart-summary');
         const options = {
             margin: 1,
             filename: 'cart_summary.pdf',
@@ -69,14 +68,37 @@ const CartSummary = ({ onClose }) => {
             jsPDF: { unit: 'in', orientation: 'portrait', format: 'letter', margin: 0.5 }
         };
 
-        html2pdf().from(element).set(options).save(); // Mengunduh PDF
+        html2pdf().from(element).set(options).save();
     };
 
     const handleOrder = async () => {
-        // Ganti status ke "Diproses" setelah pesanan berhasil
+        // Ambil status id untuk status "Sedang Disiapkan"
+        const statusResponse = await supabase
+            .from('order_status')
+            .select('id')
+            .eq('status', 'Sedang Disiapkan')  // Ganti ke status "Sedang Disiapkan"
+            .single();
+
+        // Jika status tidak ditemukan, hentikan eksekusi dan beri peringatan
+        if (!statusResponse.data) {
+            console.error('Error: "Sedang Disiapkan" status tidak ditemukan');
+            alert('Status "Sedang Disiapkan" tidak ditemukan');
+            return;
+        }
+
+        const statusId = statusResponse.data.id;
+
+        // Cek juga apakah cartItems sudah valid
+        if (!cartItems.length || cartItems.some(item => !item.id)) {
+            console.error('Error: Satu atau lebih item keranjang tidak memiliki id');
+            alert('Satu atau lebih item keranjang tidak memiliki id yang valid');
+            return;
+        }
+
+        // Update status pesanan
         const { error } = await supabase
-            .from('cart_product') // Gantilah dengan tabel yang sesuai untuk menyimpan pesanan
-            .update({ status_id: (await supabase.from('order_status').select('id').eq('status', 'Diproses').single()).data.id })
+            .from('cart_product')
+            .update({ status_id: statusId })  // Gunakan statusId yang sesuai dengan status "Sedang Disiapkan"
             .in('id', cartItems.map(item => item.id));
 
         if (error) {
@@ -84,8 +106,7 @@ const CartSummary = ({ onClose }) => {
             alert('Gagal mengirim pesanan: ' + error.message);
         } else {
             alert('Pesanan berhasil dikirim!');
-
-            onClose(); // Menutup modal setelah pesanan berhasil
+            onClose(); // Tutup modal setelah pesanan berhasil
         }
     };
 
@@ -98,7 +119,7 @@ const CartSummary = ({ onClose }) => {
                     onClick={onClose}
                     className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
                 >
-                    &times; {/* Tombol tutup modal */}
+                    &times;
                 </button>
                 <div className="cart-summary" id="cart-summary">
                     <h2 className="text-xl font-bold mb-4">Bukti Pengeluaran Barang Persediaan</h2>
@@ -156,8 +177,6 @@ const CartSummary = ({ onClose }) => {
             </div>
         </div>
     );
-
-
 };
 
 export default CartSummary;

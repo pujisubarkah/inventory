@@ -136,6 +136,7 @@ const Home = () => {
                             />
                             <div>
                                 <h3 className="text-lg font-semibold">{product.product_name}</h3>
+                                <p className="text-gray-600">{product.category_name}</p>
                                 <p className="text-gray-600">Stok: {product.quantity_change}</p>
                             </div>
                         </div>

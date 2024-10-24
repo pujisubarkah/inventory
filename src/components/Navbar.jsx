@@ -22,7 +22,6 @@ const Navbar = () => {
     const closeHistory = () => setHistoryOpen(false); // Function to close cart
 
 
-
     // Function for Logout
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
@@ -39,20 +38,22 @@ const Navbar = () => {
         const getSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             const currentUser = session?.user || null;
-            const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select('role_id')
-                .eq('user_id', currentUser.id)
-                .single();
 
-            if (profileError) {
-                console.error('Error fetching user profile:', profileError.message);
-            } else {
-                currentUser.role_id = profileData.role_id;
-            }
-            setUser(currentUser);
-
+            // Check if currentUser exists before making any queries
             if (currentUser) {
+                const { data: profileData, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('role_id')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                if (profileError) {
+                    console.error('Error fetching user profile:', profileError.message);
+                } else {
+                    currentUser.role_id = profileData.role_id;
+                }
+                setUser(currentUser);
+
                 // Fetch cart items for the logged-in user with status 'Add to Cart'
                 const { data: cartData, error: cartError } = await supabase
                     .from('user_cart_summary') // Tabel yang menyimpan data keranjang
@@ -88,10 +89,11 @@ const Navbar = () => {
 
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
             const currentUser = session?.user || null;
-            setUser(currentUser);
-            
-            // Ulangi logika pengambilan data keranjang setelah login/logout
+
             if (currentUser) {
+                setUser(currentUser);
+
+                // Fetch cart data for the user
                 const fetchCartData = async () => {
                     const { data, error } = await supabase
                         .from('user_cart_summary')
@@ -105,6 +107,7 @@ const Navbar = () => {
                         const totalItems = data.reduce((acc, item) => acc + item.quantity, 0);
                         setCartItemCount(totalItems);
                     }
+
                     // Fetch all cart items for the logged-in user regardless of status
                     const { data: allData, error: allError } = await supabase
                         .from('user_cart_summary') // Tabel yang menyimpan data keranjang
@@ -118,11 +121,11 @@ const Navbar = () => {
                         const totalItems = allData.reduce((acc, item) => acc + item.quantity, 0);
                         setItemCount(totalItems); // Update state itemCount
                     }
-                        };
-                        fetchCartData();
-                    } else {
-                        setCartItemCount(0); // Reset cart count if user logs out
-                    }
+                };
+                fetchCartData();
+            } else {
+                setCartItemCount(0); // Reset cart count if user logs out
+            }
         });
 
         return () => {
@@ -199,8 +202,8 @@ const Navbar = () => {
                                     onClick={openModal}
                                     className="bg-transparent border border-white text-white text-base font-bold py-2 px-5 rounded hover:bg-white hover:text-red-500 transition duration-300"
                                 >
-                                    <i className="fas fa-sign-in-alt mr-2"></i>
-                                    LOGIN
+                                    <i className="fas fa-user mr-2"></i>
+                                    Login
                                 </button>
                             )}
                         </div>
@@ -208,14 +211,25 @@ const Navbar = () => {
                 </div>
             </header>
 
-            {/* Modal Login */}
             <LoginModal isOpen={isModalOpen} onClose={closeModal} />
 
-            {/* Cart Summary Modal */}
-            {isCartOpen && <CartSummary onClose={() => setCartOpen(false)} />} {/* Menutup modal */}
+            {/* Cart Summary Component */}
+            {isCartOpen && (
+                <CartSummary
+                    isOpen={isCartOpen}
+                    onClose={closeCart}
+                    cartItemCount={cartItemCount} // Pass cart item count
+                />
+            )}
 
-            {/* History Summary Modal */}
-            {isHistoryOpen && <HistorySummary onClose={() => setHistoryOpen(false)} />} {/* Menutup modal */}
+            {/* History Summary Component */}
+            {isHistoryOpen && (
+                <HistorySummary
+                    isOpen={isHistoryOpen}
+                    onClose={closeHistory}
+                    itemCount={itemCount} // Pass history item count
+                />
+            )}
         </React.Fragment>
     );
 };

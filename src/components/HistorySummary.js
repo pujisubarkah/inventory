@@ -1,25 +1,25 @@
 // HistorySummary.js
 import React, { useContext, useEffect, useState } from 'react';
-import { AuthContext } from '../context/AuthContext'; // Pastikan path ini benar
-import { supabase } from '../supabaseClient'; // Pastikan path ini benar
+import { AuthContext } from '../context/AuthContext'; // Adjust the path as needed
+import { supabase } from '../supabaseClient'; // Adjust the path as needed
 import html2pdf from 'html2pdf.js'; // Import library html2pdf
 
 const HistorySummary = ({ onClose }) => {
     const { user } = useContext(AuthContext);
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false); // State untuk modal kepuasan
-    const [selectedItem, setSelectedItem] = useState(null); // Item yang dipilih untuk rating
-    const [rating, setRating] = useState(0); // State untuk nilai rating yang dipilih
-    const [comment, setComment] = useState(''); // State untuk komentar
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false); // State for rating modal
+    const [selectedItem, setSelectedItem] = useState(null); // Selected item for rating
+    const [rating, setRating] = useState(0); // State for selected rating
+    const [comment, setComment] = useState(''); // State for comment
 
     useEffect(() => {
         const fetchItems = async () => {
             if (user) {
                 const { data, error } = await supabase
-                    .from('user_cart_summary') // Mengambil data dari view
+                    .from('user_cart_summary') // Fetching data from the view
                     .select('*')
-                    .eq('user_id', user.id); // Filter berdasarkan user_id
+                    .eq('user_id', user.id); // Filter by user_id
 
                 if (error) {
                     console.error('Error fetching cart items:', error.message);
@@ -34,7 +34,7 @@ const HistorySummary = ({ onClose }) => {
     }, [user]);
 
     const downloadPDF = () => {
-        const element = document.getElementById('cart-summary'); // Ambil elemen yang akan dicetak
+        const element = document.getElementById('cart-summary'); // Get the element to print
         const options = {
             margin: 1,
             filename: 'cart_summary.pdf',
@@ -43,44 +43,95 @@ const HistorySummary = ({ onClose }) => {
             jsPDF: { unit: 'in', orientation: 'portrait', format: 'letter', margin: 0.5 }
         };
 
-        html2pdf().from(element).set(options).save(); // Mengunduh PDF
+        html2pdf().from(element).set(options).save(); // Download PDF
     };
 
     const handleCompleteItem = (itemId) => {
-        setSelectedItem(itemId); // Set item yang dipilih untuk rating
-        setIsRatingModalOpen(true); // Buka modal kepuasan
-        setRating(0); // Reset rating saat membuka modal
-        setComment(''); // Reset komentar saat membuka modal
+        setSelectedItem(itemId); // Set selected item for rating
+        setIsRatingModalOpen(true); // Open rating modal
+        setRating(0); // Reset rating
+        setComment(''); // Reset comment
     };
 
     const handleRatingSubmit = async () => {
-        if (selectedItem && rating > 0) {
+        // Validate selectedItem and rating
+        if (selectedItem === null) {
+            console.error('No item selected for rating');
+            return;
+        }
+        if (rating < 1 || rating > 5) {
+            console.error('Rating must be between 1 and 5');
+            return;
+        }
+        if (comment.trim() === '') {
+            console.error('Comment cannot be empty when rating is provided');
+            return;
+        }
+
+        const handleRatingSubmit = async () => {
+            // Validate selectedItem and rating
+            if (selectedItem === null) {
+                console.error('No item selected for rating');
+                return;
+            }
+            if (rating < 1 || rating > 5) {
+                console.error('Rating must be between 1 and 5');
+                return;
+            }
+            if (comment.trim() === '') {
+                console.error('Comment cannot be empty when rating is provided');
+                return;
+            }
+        
+            // Log user and data to be submitted
+            console.log('Current user:', user);
             console.log(`Submitting rating: User ID: ${user.id}, Product ID: ${selectedItem}, Rating: ${rating}, Comment: ${comment}`);
-            
+        
             const { data, error } = await supabase
-                .from('ratings') // Tabel untuk menyimpan rating dan komentar
+                .from('ratings') // Table to save ratings and comments
                 .insert([
                     {
                         user_id: user.id,
                         product_id: selectedItem,
                         rating: rating,
-                        comment: comment, // Menyimpan komentar
+                        comment: comment,
                     }
                 ]);
-
+        
             if (error) {
                 console.error('Error submitting rating:', error.message);
             } else {
                 console.log('Rating submitted successfully:', data);
-                setIsRatingModalOpen(false); // Tutup modal setelah submit
+                setIsRatingModalOpen(false); // Close modal after submission
+                // Optionally refresh or update UI
+                setSelectedItem(null); // Reset selected item after submission
             }
+        };
+        
+
+        const { data, error } = await supabase
+            .from('ratings') // Table to save ratings and comments
+            .insert([
+                {
+                    user_id: user.id,
+                    product_id: selectedItem,
+                    rating: rating,
+                    comment: comment,
+                }
+            ]);
+
+        if (error) {
+            console.error('Error submitting rating:', error.message);
         } else {
-            console.error('Invalid data for rating submission');
+            console.log('Rating submitted successfully:', data);
+            setIsRatingModalOpen(false); // Close modal after submission
+            // Optionally refresh or update UI
+            setSelectedItem(null); // Reset selected item after submission
         }
     };
 
     const handleStarClick = (value) => {
-        setRating(value); // Update nilai rating ketika bintang diklik
+        setRating(value); // Update rating when a star is clicked
     };
 
     if (loading) return <p>Loading...</p>;
@@ -92,7 +143,7 @@ const HistorySummary = ({ onClose }) => {
                     onClick={onClose}
                     className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
                 >
-                    &times; {/* Tombol tutup modal */}
+                    &times; {/* Close modal button */}
                 </button>
                 <div className="cart-summary" id="cart-summary">
                     <h2 className="text-xl font-bold mb-4">Bukti Pengeluaran Barang Persediaan</h2>
@@ -108,7 +159,7 @@ const HistorySummary = ({ onClose }) => {
                                         <th className="py-1 px-2 border">Nama Barang</th>
                                         <th className="py-1 px-2 border">Jumlah</th>
                                         <th className="py-1 px-2 border">Status</th>
-                                        <th className="py-1 px-2 border">Aksi</th> {/* Kolom baru untuk tombol */}
+                                        <th className="py-1 px-2 border">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -126,7 +177,7 @@ const HistorySummary = ({ onClose }) => {
                                                 >
                                                     Selesai
                                                 </button>
-                                            </td> {/* Tombol selesai di setiap produk */}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -141,7 +192,7 @@ const HistorySummary = ({ onClose }) => {
                 </div>
             </div>
 
-            {/* Modal Kepuasan */}
+            {/* Rating Modal */}
             {isRatingModalOpen && (
                 <div className="modal-overlay fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
                     <div className="modal-content bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
@@ -151,7 +202,7 @@ const HistorySummary = ({ onClose }) => {
                             {[1, 2, 3, 4, 5].map((star) => (
                                 <button
                                     key={star}
-                                    onClick={() => handleStarClick(star)} // Tangani klik pada bintang
+                                    onClick={() => handleStarClick(star)}
                                     className={`text-2xl ${star <= rating ? 'text-yellow-500' : 'text-gray-400'}`}
                                 >
                                     ★
@@ -161,7 +212,7 @@ const HistorySummary = ({ onClose }) => {
                         <textarea
                             placeholder="Tulis komentar Anda..."
                             value={comment}
-                            onChange={(e) => setComment(e.target.value)} // Update komentar saat ditulis
+                            onChange={(e) => setComment(e.target.value)}
                             className="w-full border p-2 rounded mb-4"
                         />
                         <button
