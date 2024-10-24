@@ -155,6 +155,15 @@ const Pesanan = () => {
         <div className="p-4 w-full">
             {/* Category Filter and Search Bar Container */}
             <div className="flex justify-end mb-4 space-x-4">
+                {/* Notification Bell */}
+                <div className="relative">
+                        <FaBell className="h-6 w-6 text-gray-700" />
+                        {notificationCount > 0 && (
+                            <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                                {notificationCount}
+                            </span>
+                        )}
+                </div>
                 {/* Category Filter */}
                 <select
                     onChange={(e) => setStatusFilter(e.target.value)}
@@ -183,20 +192,6 @@ const Pesanan = () => {
                 </form>
             </div>
             <div className="w-full mt-24">
-                <div className="flex justify-between w-11/12 mx-auto ">
-                    <div className="w-1/3">
-                        
-                    </div>
-                    <div className="relative">
-                        <FaBell className="h-6 w-6 text-gray-700" />
-                        {notificationCount > 0 && (
-                            <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                                {notificationCount}
-                            </span>
-                        )}
-                    </div>
-                </div>
-
                 <div className="w-full flex justify-center mt-16">
                     <table className="border-collapse table-auto w-11/12 text-sm self-center">
                         <thead>
