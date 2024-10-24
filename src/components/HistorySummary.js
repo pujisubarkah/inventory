@@ -1,25 +1,26 @@
 // HistorySummary.js
 import React, { useContext, useEffect, useState } from 'react';
-import { AuthContext } from '../context/AuthContext'; // Adjust the path as needed
-import { supabase } from '../supabaseClient'; // Adjust the path as needed
-import html2pdf from 'html2pdf.js'; // Import library html2pdf
+import { AuthContext } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
+import html2pdf from 'html2pdf.js';
 
 const HistorySummary = ({ onClose }) => {
     const { user } = useContext(AuthContext);
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false); // State for rating modal
-    const [selectedItem, setSelectedItem] = useState(null); // Selected item for rating
-    const [rating, setRating] = useState(0); // State for selected rating
-    const [comment, setComment] = useState(''); // State for comment
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [rating, setRating] = useState(0);
+    const [comment, setComment] = useState('');
+    const [show, setShow] = useState(true);
 
     useEffect(() => {
         const fetchItems = async () => {
             if (user) {
                 const { data, error } = await supabase
-                    .from('user_cart_summary') // Fetching data from the view
+                    .from('user_cart_summary')
                     .select('*')
-                    .eq('user_id', user.id); // Filter by user_id
+                    .eq('user_id', user.id);
 
                 if (error) {
                     console.error('Error fetching cart items:', error.message);
@@ -34,7 +35,7 @@ const HistorySummary = ({ onClose }) => {
     }, [user]);
 
     const downloadPDF = () => {
-        const element = document.getElementById('cart-summary'); // Get the element to print
+        const element = document.getElementById('cart-summary');
         const options = {
             margin: 1,
             filename: 'cart_summary.pdf',
@@ -43,18 +44,54 @@ const HistorySummary = ({ onClose }) => {
             jsPDF: { unit: 'in', orientation: 'portrait', format: 'letter', margin: 0.5 }
         };
 
-        html2pdf().from(element).set(options).save(); // Download PDF
+        html2pdf().from(element).set(options).save();
     };
 
-    const handleCompleteItem = (itemId) => {
-        setSelectedItem(itemId); // Set selected item for rating
-        setIsRatingModalOpen(true); // Open rating modal
-        setRating(0); // Reset rating
-        setComment(''); // Reset comment
+    const handleCompleteItem = async (itemId) => {
+        setSelectedItem(itemId);
+        setIsRatingModalOpen(true);
+        setRating(0);
+        setComment('');
+
+        // Insert the completed item into the completed_cart table
+        const { data, error: insertError } = await supabase
+            .from('completed_cart')
+            .insert([{ 
+                user_id: user.id, 
+                product_id: itemId,
+            }]);
+
+        if (insertError) {
+            console.error('Error inserting into completed_cart:', insertError.message);
+            return;
+        }
+
+        // Remove the item from the cart_product table
+        const { error: deleteError } = await supabase
+            .from('cart_product')  // Menghapus dari tabel asli
+            .delete()
+            .eq('product_id', itemId)
+            .eq('user_id', user.id);
+
+        if (deleteError) {
+            console.error('Error deleting item from cart_product:', deleteError.message);
+            return;
+        }
+
+        // Fetch the updated cart items from user_cart_summary
+        const { data: updatedData, error: fetchError } = await supabase
+            .from('user_cart_summary')
+            .select('*')
+            .eq('user_id', user.id);
+
+        if (fetchError) {
+            console.error('Error fetching updated cart items:', fetchError.message);
+        } else {
+            setCartItems(updatedData); // Update the cartItems after deleting the completed item
+        }
     };
 
     const handleRatingSubmit = async () => {
-        // Validate selectedItem and rating
         if (selectedItem === null) {
             console.error('No item selected for rating');
             return;
@@ -68,73 +105,33 @@ const HistorySummary = ({ onClose }) => {
             return;
         }
 
-        const handleRatingSubmit = async () => {
-            // Validate selectedItem and rating
-            if (selectedItem === null) {
-                console.error('No item selected for rating');
-                return;
-            }
-            if (rating < 1 || rating > 5) {
-                console.error('Rating must be between 1 and 5');
-                return;
-            }
-            if (comment.trim() === '') {
-                console.error('Comment cannot be empty when rating is provided');
-                return;
-            }
-        
-            // Log user and data to be submitted
-            console.log('Current user:', user);
-            console.log(`Submitting rating: User ID: ${user.id}, Product ID: ${selectedItem}, Rating: ${rating}, Comment: ${comment}`);
-        
-            const { data, error } = await supabase
-                .from('ratings') // Table to save ratings and comments
-                .insert([
-                    {
-                        user_id: user.id,
-                        product_id: selectedItem,
-                        rating: rating,
-                        comment: comment,
-                    }
-                ]);
-        
-            if (error) {
-                console.error('Error submitting rating:', error.message);
-            } else {
-                console.log('Rating submitted successfully:', data);
-                setIsRatingModalOpen(false); // Close modal after submission
-                // Optionally refresh or update UI
-                setSelectedItem(null); // Reset selected item after submission
-            }
-        };
-        
-
         const { data, error } = await supabase
-            .from('ratings') // Table to save ratings and comments
-            .insert([
-                {
-                    user_id: user.id,
-                    product_id: selectedItem,
-                    rating: rating,
-                    comment: comment,
-                }
-            ]);
+            .from('ratings')
+            .insert([{
+                user_id: user.id,
+                product_id: selectedItem,
+                rating: rating,
+                comment: comment,
+            }]);
 
         if (error) {
             console.error('Error submitting rating:', error.message);
         } else {
             console.log('Rating submitted successfully:', data);
-            setIsRatingModalOpen(false); // Close modal after submission
-            // Optionally refresh or update UI
-            setSelectedItem(null); // Reset selected item after submission
+            setIsRatingModalOpen(false);
+            setSelectedItem(null);
+            setRating(0);
+            setComment('');
+            setShow(false);
+            onClose();
         }
     };
 
     const handleStarClick = (value) => {
-        setRating(value); // Update rating when a star is clicked
+        setRating(value);
     };
 
-    if (loading) return <p>Loading...</p>;
+    if (loading || !show) return null; // Don't render if loading or modal is not shown
 
     return (
         <div className="modal-overlay fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
@@ -143,7 +140,7 @@ const HistorySummary = ({ onClose }) => {
                     onClick={onClose}
                     className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
                 >
-                    &times; {/* Close modal button */}
+                    &times;
                 </button>
                 <div className="cart-summary" id="cart-summary">
                     <h2 className="text-xl font-bold mb-4">Bukti Pengeluaran Barang Persediaan</h2>
@@ -163,7 +160,7 @@ const HistorySummary = ({ onClose }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {cartItems.map((item, index) => (
+                                    {cartItems.filter(item => item.status !== 'selesai').map((item, index) => (
                                         <tr key={item.product_id}>
                                             <td className="border px-2 py-1">{index + 1}</td>
                                             <td className="border px-2 py-1">{item.product_code}</td>
@@ -171,9 +168,9 @@ const HistorySummary = ({ onClose }) => {
                                             <td className="border px-2 py-1">{item.quantity}</td>
                                             <td className="border px-2 py-1">{item.status}</td>
                                             <td className="border px-2 py-1">
-                                                <button
+                                                <button 
+                                                    onClick={() => handleCompleteItem(item.product_id)} 
                                                     className="bg-green-500 text-white py-1 px-2 rounded"
-                                                    onClick={() => handleCompleteItem(item.product_id)}
                                                 >
                                                     Selesai
                                                 </button>
@@ -223,7 +220,7 @@ const HistorySummary = ({ onClose }) => {
                         </button>
                         <button
                             onClick={() => setIsRatingModalOpen(false)}
-                            className="bg-red-500 text-white py-2 px-4 rounded mt-2"
+                            className="text-gray-600 mt-2"
                         >
                             Batal
                         </button>
