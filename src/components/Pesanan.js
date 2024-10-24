@@ -2,23 +2,27 @@ import React, { useEffect, useState } from "react";
 import { supabase } from '../supabaseClient';
 import ReactPaginate from "react-paginate";
 import * as XLSX from 'xlsx'; 
-import { FaFileExcel } from 'react-icons/fa'; 
+import { FaFileExcel, FaSearch } from 'react-icons/fa'; 
 import { FaBell } from 'react-icons/fa';
 import Sidebar from "./Sidebar";
 
 
 const Pesanan = () => {
     const [order, setOrder] = useState([]);
+    const [status, setStatus] = useState([]);
     const [page, setPage] = useState(0);
     const [limit, setLimit] = useState(10);
     const [totalPage, setTotalPage] = useState(0);
     const [totalRow, setTotalRow] = useState(0);
     const [message, setMessage] = useState("");
     const [notificationCount, setNotificationCount] = useState(0);
+    const [searchQuery, setSearchQuery] = useState(''); // State for search query
+    const [statusFilter, setStatusFilter] = useState(''); // State for category filter
 
 
     useEffect(() => {
         getOrder();
+        getStatus();
     }, [page]);
 
     const getOrder = async () => {
@@ -33,6 +37,20 @@ const Pesanan = () => {
             setOrder(data);
             setTotalRow(count);
             setTotalPage(Math.ceil(count / limit));
+        } catch (error) {
+            console.error('Error fetching order:', error.message);
+        }
+    };
+
+    const getStatus = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('order_status')
+                .select('*');
+
+            if (error) throw error;
+
+            setStatus(data);
         } catch (error) {
             console.error('Error fetching order:', error.message);
         }
@@ -96,8 +114,6 @@ const Pesanan = () => {
             </div>
         );
     }
-
-    const orderStatusOptions = ["Add to Cart", "Diproses", "Tersedia", "Selesai", "Ditolak"];
     
     const handleQuantityChange = async (itemId, newQuantity) => {
         const { error } = await supabase
@@ -113,11 +129,59 @@ const Pesanan = () => {
         }
     };
 
-
+        // Handle search query changes
+        const handleSearch = (e) => {
+            setSearchQuery(e.target.value);
+        };
+    
+        // Function to handle search action when user presses enter
+        const handleSearchSubmit = (e) => {
+            e.preventDefault();
+            // Handle search action here, e.g., send searchQuery to the backend or filter displayed items
+            console.log('Search for:', searchQuery);
+            // Optionally, clear the search after submission
+            setSearchQuery('');
+        };
+    
+    
+        // Filter products based on category
+        const filteredOrder = order.filter(order => 
+            (statusFilter === '' || order.status === statusFilter) &&
+            (searchQuery === '' || order.nama_lengkap.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
 
     return (
         <Sidebar>
-        <div>
+        <div className="p-4 w-full">
+            {/* Category Filter and Search Bar Container */}
+            <div className="flex justify-end mb-4 space-x-4">
+                {/* Category Filter */}
+                <select
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-4 py-2 rounded-md border focus:outline-none"
+                >
+                    <option value=""><i>Pilih Status</i></option>
+                    {status.map((statusOption) => (
+                        <option key={statusOption.id} value={statusOption.status}>
+                            {statusOption.status}
+                        </option>
+                    ))}
+                </select>
+        
+                {/* Search Bar */}
+                <form onSubmit={handleSearchSubmit} className="flex items-center space-x-2">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={handleSearch}
+                        className="w-full px-4 py-2 rounded-md border focus:outline-none"
+                        placeholder="Cari nama pegawai"
+                    />
+                    <button type="submit" className="bg-white text-darkred p-2 rounded-md">
+                        <FaSearch size={18} />
+                    </button>
+                </form>
+            </div>
             <div className="w-full mt-24">
                 <div className="flex justify-between w-11/12 mx-auto ">
                     <div className="w-1/3">
@@ -149,7 +213,7 @@ const Pesanan = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {order.map((order, index) => (
+                            {filteredOrder.map((order, index) => (
                                 <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                                     <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{index + 1}</td>
                                     <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{order.created_at.split('T')[0]}</td>
@@ -168,9 +232,11 @@ const Pesanan = () => {
                                     </td>
                                     <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>
                                         <select
-                                            value={order.status_id}
+                                            value={order.status}
                                             onChange={async (e) => {
-                                                const newStatusId = e.target.value;
+                                                const newStatus = e.target.value;
+                                                const statusOption = status.find(option => option.status === newStatus);
+                                                const newStatusId = statusOption ? statusOption.id : null;
                                                 const { error } = await supabase
                                                     .from('cart_product')
                                                     .update({ status_id: newStatusId })
@@ -180,14 +246,14 @@ const Pesanan = () => {
                                                     console.error('Error updating status:', error.message);
                                                     alert('Gagal mengubah status: ' + error.message);
                                                 } else {
-                                                    setOrder(order.map(item => item.id === order.id ? { ...item, status_id: newStatusId } : item));
+                                                    setOrder(filteredOrder.map(item => item.id === order.id ? { ...item, status: newStatus } : item));
                                                 }
                                             }}
                                             className="w-full text-left"
                                         >
-                                            {orderStatusOptions.map((statusOption) => (
-                                                <option key={statusOption} value={statusOption}>
-                                                    {statusOption}
+                                            {status.map((statusOption) => (
+                                                <option key={statusOption.id} value={statusOption.status}>
+                                                    {statusOption.status}
                                                 </option>
                                             ))}
                                         </select>
