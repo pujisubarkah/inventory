@@ -9,10 +9,10 @@ const AddProductModal = ({ visible, onClose }) => {
     const [quantity, setQuantity] = useState(0);
     const [imageFile, setImageFile] = useState(null);
 
-    const handleImageUpload = async (file) => {
-        const apiKey = 'bfd49879de15fa360d0c35da9ea4daa3'; // Ganti dengan API Key ImgBB Anda
-        const formData = new FormData();
-        formData.append('image', file);
+   const handleImageUpload = async (file) => {
+    const apiKey = process.env.REACT_APP_IMGBB_API_KEY; // Ambil dari environment variable
+    const formData = new FormData();
+    formData.append('image', file);
 
         const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
             method: 'POST',
