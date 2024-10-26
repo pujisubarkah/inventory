@@ -251,12 +251,13 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {showModalAdd && <AddProductModal onClose={() => setShowModalAdd(false)} onAddProduct={handleAddProduct} />}
+            {showModalAdd && <AddProductModal onClose={() => setShowModalAdd(false)} onAddProduct={handleAddProduct} visible={true} />}
             {showModalEdit && (
                 <EditProductModal 
                     onClose={() => setShowModalEdit(false)} 
                     onEditProduct={handleEditProduct} 
-                    initialQuantity={modalQuantityChange} 
+                    initialQuantity={modalQuantityChange}
+                    visible={true}
                 />
             )}
         </Sidebar>
