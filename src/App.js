@@ -8,6 +8,7 @@ import Persediaan from './Persediaan';
 import Ruangan from './Ruangan';
 import Dashboard from './components/Dashboard';
 import Pesanan from './components/Pesanan'; 
+import Selesai from './components/Selesai';
 import LoginModal from './components/LoginModal'; 
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
               <Route path="/login" element={<LoginModal />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/pesanan" element={<Pesanan />} />
+              <Route path="/selesai" element={<Selesai />} />
             </Routes>
           </main>
           <Footer />

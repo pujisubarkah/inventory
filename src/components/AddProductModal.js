@@ -1,16 +1,33 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import Resizer from 'react-image-file-resizer';
 
 const AddProductModal = ({ visible, onClose }) => {
     const [productName, setProductName] = useState('');
     const [productCode, setProductCode] = useState('');
-    const [productCategory, setProductCategory] = useState('');
+    const [categoryId, setCategoryId] = useState(''); // Store selected category ID
     const [quantity, setQuantity] = useState(0);
     const [imageFile, setImageFile] = useState(null);
+    const [categories, setCategories] = useState([]); // State to hold categories
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const { data, error } = await supabase
+                .from('product_category')
+                .select('*');
+
+            if (error) {
+                console.error('Error fetching categories:', error);
+            } else {
+                setCategories(data);
+            }
+        };
+
+        fetchCategories();
+    }, []);
 
     const handleImageUpload = async (file) => {
-        const apiKey = 'bfd49879de15fa360d0c35da9ea4daa3'; // Ganti dengan API Key ImgBB Anda
+        const apiKey = 'bfd49879de15fa360d0c35da9ea4daa3'; // Replace with your ImgBB API Key
         const formData = new FormData();
         formData.append('image', file);
 
@@ -21,7 +38,7 @@ const AddProductModal = ({ visible, onClose }) => {
 
         const data = await response.json();
         if (data.success) {
-            return data.data.url; // Kembalikan URL gambar
+            return data.data.url; // Return image URL
         } else {
             throw new Error('Image upload failed');
         }
@@ -31,15 +48,15 @@ const AddProductModal = ({ visible, onClose }) => {
         return new Promise((resolve, reject) => {
             Resizer.imageFileResizer(
                 file,
-                800, // Lebar
-                800, // Tinggi
+                800, // Width
+                800, // Height
                 'JPEG', // Format
-                100, // Kualitas
-                0, // Rotasi
+                100, // Quality
+                0, // Rotation
                 (uri) => {
                     resolve(uri);
                 },
-                'blob' // Tipe output
+                'blob' // Output type
             );
         });
     };
@@ -50,19 +67,19 @@ const AddProductModal = ({ visible, onClose }) => {
         try {
             let uploadedImageUrl = '';
 
-            // Tangani unggahan gambar jika ada file yang dipilih
+            // Handle image upload if a file is selected
             if (imageFile) {
-                const resizedImage = await handleImageResize(imageFile); // Ukur ulang gambar
-                uploadedImageUrl = await handleImageUpload(resizedImage); // Unggah gambar yang sudah diubah ukurannya
+                const resizedImage = await handleImageResize(imageFile); // Resize image
+                uploadedImageUrl = await handleImageUpload(resizedImage); // Upload resized image
             }
 
-            // Sisipkan ke tabel produk
+            // Insert into products table
             const { data: productData, error: productError } = await supabase
                 .from('products')
                 .insert([{ 
                     product_name: productName, 
                     product_code: productCode, 
-                    category_name: productCategory,
+                    category_id: categoryId, // Use selected category ID
                     image_url: uploadedImageUrl 
                 }])
                 .select();
@@ -72,8 +89,8 @@ const AddProductModal = ({ visible, onClose }) => {
                 return;
             }
 
-            // Sisipkan ke tabel product_stock
-            const productId = productData[0].id; // Ambil ID produk yang baru dibuat
+            // Insert into product_stock table
+            const productId = productData[0].id; // Get newly created product ID
             const { error: stockError } = await supabase
                 .from('product_stock')
                 .insert([{ product_id: productId, quantity_change: quantity }]);
@@ -82,14 +99,14 @@ const AddProductModal = ({ visible, onClose }) => {
                 console.error('Error inserting product stock:', stockError);
             }
 
-            // Reset field form
+            // Reset form fields
             setProductName('');
-            setProductCategory('');
+            setCategoryId(''); // Reset category
             setProductCode('');
             setQuantity(0);
             setImageFile(null);
 
-            // Tutup modal
+            // Close modal
             onClose();
 
         } catch (error) {
@@ -129,14 +146,20 @@ const AddProductModal = ({ visible, onClose }) => {
                         />
                     </div>
                     <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">Product Name:</label>
-                        <input
-                            type="text"
-                            value={productCategory}
-                            onChange={(e) => setProductCategory(e.target.value)}
+                        <label className="block text-gray-700 text-sm font-bold mb-2">Category:</label>
+                        <select
+                            value={categoryId}
+                            onChange={(e) => setCategoryId(e.target.value)}
                             required
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                        >
+                            <option value="">Select Category</option>
+                            {categories.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                    {category.category_name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div className="mb-4">
                         <label className="block text-gray-700 text-sm font-bold mb-2">Quantity:</label>

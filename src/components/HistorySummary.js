@@ -1,3 +1,4 @@
+
 // HistorySummary.js
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
@@ -8,11 +9,6 @@ const HistorySummary = ({ onClose }) => {
     const { user } = useContext(AuthContext);
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState(null);
-    const [rating, setRating] = useState(0);
-    const [comment, setComment] = useState('');
-    const [show, setShow] = useState(true);
 
     useEffect(() => {
         const fetchItems = async () => {
@@ -47,36 +43,44 @@ const HistorySummary = ({ onClose }) => {
         html2pdf().from(element).set(options).save();
     };
 
-    // Define handleCompleteItem BEFORE returning JSX
     const handleCompleteItem = async (itemId) => {
-        setSelectedItem(itemId);
-        setIsRatingModalOpen(true);
-        setRating(0);
-        setComment('');
+        console.log('Completing item with ID:', itemId); // Log item ID
+
+        if (!itemId) {
+            console.error('Item ID is undefined');
+            return; // Prevent further execution
+        }
+
+        // Find the item to get its details
+        const itemToComplete = cartItems.find(item => item.id === itemId);
+        if (!itemToComplete) {
+            console.error('Item not found in cartItems');
+            return; // Stop execution if item is not found
+        }
 
         // Insert the completed item into the completed_cart table
         const { error: insertError } = await supabase
             .from('completed_cart')
             .insert([{ 
                 user_id: user.id, 
-                product_id: itemId,
+                product_id: itemToComplete.product_id, // Use the product_id from the item
+                quantity: itemToComplete.quantity // Include quantity
             }]);
 
         if (insertError) {
             console.error('Error inserting into completed_cart:', insertError.message);
-            return;
+            return; // Stop execution if there's an error
         }
 
-        // Remove the item from the cart_product table
+        // Delete the completed item from cart_product using product_id
         const { error: deleteError } = await supabase
             .from('cart_product')
             .delete()
-            .eq('product_id', itemId)
-            .eq('user_id', user.id);
+            .eq('id', itemId); // Use the itemId to delete
 
         if (deleteError) {
-            console.error('Error deleting item from cart_product:', deleteError.message);
-            return;
+            console.error('Error deleting items from cart_product:', deleteError.message);
+            return; // Stop execution if there's an error
         }
 
         // Fetch the updated cart items from user_cart_summary
@@ -92,48 +96,7 @@ const HistorySummary = ({ onClose }) => {
         }
     };
 
-    // Define handleStarClick BEFORE returning JSX
-    const handleStarClick = (value) => {
-        setRating(value);
-    };
-
-    const handleRatingSubmit = async () => {
-        if (selectedItem === null) {
-            console.error('No item selected for rating');
-            return;
-        }
-        if (rating < 1 || rating > 5) {
-            console.error('Rating must be between 1 and 5');
-            return;
-        }
-        if (comment.trim() === '') {
-            console.error('Comment cannot be empty when rating is provided');
-            return;
-        }
-
-        const { data, error } = await supabase
-            .from('ratings')
-            .insert([{
-                user_id: user.id,
-                product_id: selectedItem,
-                rating: rating,
-                comment: comment,
-            }]);
-
-        if (error) {
-            console.error('Error submitting rating:', error.message);
-        } else {
-            console.log('Rating submitted successfully:', data);
-            setIsRatingModalOpen(false);
-            setSelectedItem(null);
-            setRating(0);
-            setComment('');
-            setShow(false);
-            onClose();
-        }
-    };
-
-    if (loading || !show) return null; // Don't render if loading or modal is not shown
+    if (loading) return <p>Loading...</p>;
 
     return (
         <div className="modal-overlay fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
@@ -163,7 +126,7 @@ const HistorySummary = ({ onClose }) => {
                                 </thead>
                                 <tbody>
                                     {cartItems.filter(item => item.status !== 'selesai').map((item, index) => (
-                                        <tr key={item.product_id}>
+                                        <tr key={item.id}> {/* Ensure the key is unique */}
                                             <td className="border px-2 py-1">{index + 1}</td>
                                             <td className="border px-2 py-1">{item.product_code}</td>
                                             <td className="border px-2 py-1">{item.product_name}</td>
@@ -171,7 +134,7 @@ const HistorySummary = ({ onClose }) => {
                                             <td className="border px-2 py-1">{item.status}</td>
                                             <td className="border px-2 py-1">
                                                 <button 
-                                                    onClick={() => handleCompleteItem(item.product_id)} 
+                                                    onClick={() => handleCompleteItem(item.id)} // Pass the correct item id
                                                     className="bg-green-500 text-white py-1 px-2 rounded"
                                                 >
                                                     Selesai
@@ -186,49 +149,10 @@ const HistorySummary = ({ onClose }) => {
                             </button>
                         </>
                     ) : (
-                        <p>Keranjang Anda kosong.</p>
+                        <p>Pesanan Anda Selesai</p>
                     )}
                 </div>
             </div>
-
-            {/* Rating Modal */}
-            {isRatingModalOpen && (
-                <div className="modal-overlay fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="modal-content bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                        <h2 className="text-lg font-bold mb-4">Beri Penilaian Anda</h2>
-                        <p>Berikan rating untuk produk ini:</p>
-                        <div className="flex justify-center mb-4">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    onClick={() => handleStarClick(star)}
-                                    className={`text-2xl ${star <= rating ? 'text-yellow-500' : 'text-gray-400'}`}
-                                >
-                                    ★
-                                </button>
-                            ))}
-                        </div>
-                        <textarea
-                            placeholder="Tulis komentar Anda..."
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            className="w-full border p-2 rounded mb-4"
-                        />
-                        <button
-                            onClick={handleRatingSubmit}
-                            className="bg-green-500 text-white py-2 px-4 rounded"
-                        >
-                            Kirim Rating
-                        </button>
-                        <button
-                            onClick={() => setIsRatingModalOpen(false)}
-                            className="text-gray-600 mt-2"
-                        >
-                            Batal
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

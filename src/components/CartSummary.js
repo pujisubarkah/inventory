@@ -8,7 +8,6 @@ const CartSummary = ({ onClose }) => {
     const { user } = useContext(AuthContext);
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [rating, setRating] = useState(0); // State for the rating
 
     useEffect(() => {
         const fetchCartItems = async () => {
@@ -111,37 +110,6 @@ const CartSummary = ({ onClose }) => {
         }
     };
 
-    const handleCompleteOrder = async () => {
-        // Ambil status id untuk status "Selesai"
-        const statusResponse = await supabase
-            .from('order_status')
-            .select('id')
-            .eq('status', 'Selesai')  // Ganti ke status "Selesai"
-            .single();
-
-        if (!statusResponse.data) {
-            console.error('Error: "Selesai" status tidak ditemukan');
-            alert('Status "Selesai" tidak ditemukan');
-            return;
-        }
-
-        const statusId = statusResponse.data.id;
-
-        // Update status pesanan
-        const { error } = await supabase
-            .from('cart_product')
-            .update({ status_id: statusId, rating })  // Gunakan statusId yang sesuai dengan status "Selesai" dan simpan rating
-            .in('id', cartItems.map(item => item.id));
-
-        if (error) {
-            console.error('Error completing order:', error.message);
-            alert('Gagal menyelesaikan pesanan: ' + error.message);
-        } else {
-            alert('Pesanan berhasil diselesaikan dengan rating: ' + rating);
-            onClose(); // Tutup modal setelah pesanan berhasil
-        }
-    };
-
     if (loading) return <p>Loading...</p>;
 
     return (
@@ -201,20 +169,6 @@ const CartSummary = ({ onClose }) => {
                             <button onClick={handleOrder} className="bg-red-500 text-white py-2 px-4 rounded mt-4">
                                 Pesan
                             </button>
-                            <div className="mt-4">
-                                <label className="block font-bold mb-2">Berikan Rating:</label>
-                                <input
-                                    type="number"
-                                    value={rating}
-                                    onChange={(e) => setRating(e.target.value)}
-                                    min="1"
-                                    max="5"
-                                    className="border rounded p-2"
-                                />
-                                <button onClick={handleCompleteOrder} className="bg-green-500 text-white py-2 px-4 rounded mt-2">
-                                    Selesai
-                                </button>
-                            </div>
                         </>
                     ) : (
                         <p>Tidak ada barang di keranjang.</p>

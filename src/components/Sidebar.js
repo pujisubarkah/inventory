@@ -57,6 +57,8 @@ const Sidebar = ({ children }) => {
                     <p className={`${!open && "hidden"} font-medium px-4 origin-left duration-200`}>Daftar Pesanan</p>
                   </li>
                 </NavLink>
+              
+
               </ul>
             </div>
             {/* End Sidebar */}
