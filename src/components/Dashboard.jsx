@@ -5,9 +5,7 @@ import AddProductModal from "./AddProductModal";
 import EditProductModal from "./EditProductModal";
 import Sidebar from "./Sidebar";
 import * as XLSX from 'xlsx'; 
-import { FaFileExcel } from 'react-icons/fa';  
-import { FaEdit, FaTrash } from 'react-icons/fa';
-import { FaBell } from 'react-icons/fa';
+import { FaFileExcel, FaEdit, FaTrash } from 'react-icons/fa';
 
 const Dashboard = () => {
     const [products, setProducts] = useState([]);
@@ -15,11 +13,11 @@ const Dashboard = () => {
     const [limit, setLimit] = useState(10);
     const [totalPage, setTotalPage] = useState(0);
     const [totalRow, setTotalRow] = useState(0);
-    const [message, setMessage] = useState("");
     const [showModalAdd, setShowModalAdd] = useState(false);
     const [showModalEdit, setShowModalEdit] = useState(false);
     const [modalId, setModalId] = useState("");
-    const [notificationCount, setNotificationCount] = useState(0);
+    const [modalQuantityChange, setModalQuantityChange] = useState(0);
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
         getProducts();
@@ -28,9 +26,15 @@ const Dashboard = () => {
     const getProducts = async () => {
         try {
             const { data, error, count } = await supabase
-                .from('products')
-                .select('id, product_name, product_code, product_stock(quantity_change)', { count: 'exact' })
-                .range(page * limit, (page + 1) * limit - 1);
+            .from('products')
+            .select(`
+                id,
+                product_name,
+                product_code,
+                product_stock(quantity_change),
+                product_category(category_name) 
+            `, { count: 'exact' })
+            .range(page * limit, (page + 1) * limit - 1);
 
             if (error) throw error;
 
@@ -44,11 +48,6 @@ const Dashboard = () => {
 
     const changePage = ({ selected }) => {
         setPage(selected);
-        if (selected === 9) {
-            setMessage("Jika belum menemukan produk yang dicari, Silahkan cari lewat kolom pencarian dengan keyword lebih spesifik!");
-        } else {
-            setMessage("");
-        }
     };
 
     const deleteProduct = async (id) => {
@@ -59,7 +58,6 @@ const Dashboard = () => {
                 .eq('id', id);
 
             if (error) throw error;
-
             getProducts();
         } catch (error) {
             console.error('Error deleting product:', error.message);
@@ -81,28 +79,57 @@ const Dashboard = () => {
         }
     };
 
-    const handleEditProduct = async (updatedProduct) => {
+    const handleEditClick = (productId, quantity) => {
+        setModalId(productId);
+        setModalQuantityChange(quantity);
+        setShowModalEdit(true);
+    };
+
+    const handleEditProduct = async (addedQuantity) => {
+        if (!modalId) {
+            console.error("Error: modalId is empty or undefined");
+            return;
+        }
+    
         try {
-            const { error } = await supabase
-                .from('products')
-                .update(updatedProduct)
-                .eq('id', modalId);
+            const { data, error: fetchError } = await supabase
+                .from('product_stock')
+                .select('quantity_change')
+                .eq('product_id', modalId)
+                .single();
 
-            if (error) throw error;
-
+            if (fetchError) {
+                throw new Error(`Failed to fetch product stock for product_id ${modalId}: ${fetchError.message}`);
+            }
+    
+            if (!data) {
+                console.error(`No stock entry found for product_id ${modalId}. Make sure the product exists in product_stock.`);
+                return;
+            }
+    
+            const newQuantityChange = (data.quantity_change || 0) + addedQuantity;
+    
+            const { error: updateError } = await supabase
+                .from('product_stock')
+                .update({ quantity_change: newQuantityChange })
+                .eq('product_id', modalId);
+    
+            if (updateError) {
+                throw new Error(`Failed to update quantity_change for product_id ${modalId}: ${updateError.message}`);
+            }
+    
             setShowModalEdit(false);
-            getProducts();
+            getProducts(); 
         } catch (error) {
-            console.error('Error editing product:', error.message);
+            console.error('Error updating product stock:', error.message);
         }
     };
 
     const exportToExcel = () => {
         const worksheetData = products.map(product => ({
             'Name': product.product_name,
-            'Stock Quantity': product.product_stock && product.product_stock.length > 0 ? 
-                product.product_stock.reduce((total, stock) => total + stock.quantity_change, 0) 
-                : 0,
+            'Stock Quantity': product.product_stock?.reduce((total, stock) => total + stock.quantity_change, 0) || 0,
+            'Category': product.product_category?.category_name || 'N/A' 
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -110,8 +137,6 @@ const Dashboard = () => {
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
         XLSX.writeFile(workbook, 'Products_List.xlsx');
     };
-
-    const [user, setUser] = useState(null); // State to store user information
 
     useEffect(() => {
         const checkUser = async () => {
@@ -135,14 +160,18 @@ const Dashboard = () => {
                 setUser(null);
             }
         };
-
         checkUser();
     }, []);
 
     if (!user) {
         return (
             <div className="flex flex-col items-center justify-center h-screen text-center p-4 w-full">
-                <img src="https://img.freepik.com/premium-vector/mobile-login-flat-design-vector-illustration_1288538-7537.jpg?semt=ais_hybrid" alt="Login required illustration" className="w-1/2 mb-4"  style={{ marginBottom: '20px', maxWidth: '20%', height: 'auto', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
+                <img 
+                    src="https://img.freepik.com/premium-vector/mobile-login-flat-design-vector-illustration_1288538-7537.jpg?semt=ais_hybrid" 
+                    alt="Login required illustration" 
+                    className="w-1/2 mb-4" 
+                    style={{ marginBottom: '20px', maxWidth: '20%', height: 'auto', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} 
+                />
                 <p className="text-xl font-semibold">Anda harus login sebagai admin untuk mengakses dashboard</p>
             </div>
         );
@@ -150,121 +179,89 @@ const Dashboard = () => {
 
     return (
         <Sidebar>
-        <div>
-            <div className="w-full mt-24">
-                <div className="flex justify-between w-11/12 mx-auto ">
-                    <div className="w-1/3">
-                        <button onClick={() => setShowModalAdd(true)} className="py-2 px-3 font-medium text-white rounded shadow flex items-center"
-                        style={{ backgroundColor: '#a2003b', transition: 'background-color 0.3s' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#900028'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#a2003b'}>
-                            Tambah Produk
-                        </button>
+            <div>
+                <div className="w-full mt-24">
+                    <div className="flex justify-between w-11/12 mx-auto ">
+                        <div className="w-1/3">
+                            <button onClick={() => setShowModalAdd(true)} className="py-2 px-3 font-medium text-white rounded shadow flex items-center"
+                                style={{ backgroundColor: '#a2003b', transition: 'background-color 0.3s' }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#900028'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#a2003b'}>
+                                Tambah Produk
+                            </button>
+                        </div>
                     </div>
-                    <div className="relative">
-                        <FaBell className="h-6 w-6 text-gray-700" />
-                        {notificationCount > 0 && (
-                            <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                                {notificationCount}
-                            </span>
-                        )}
-                    </div>
-                </div>
 
-                <div className="w-full flex justify-center mt-16">
-                    <table className="border-collapse table-auto w-11/12 text-sm self-center">
-                        <thead>
-                            <tr>
-                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">No</th>
-                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Kode Barang</th>
-                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Nama Barang</th>
-                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Jumlah Stok</th>
-                                <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {products.map((product, index) => (
-                                <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
-                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{index + 1}</td>
-                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{product.product_code}</td>
-                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>{product.product_name}</td>
-                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold" style={{ fontFamily: 'Helvetica, sans-serif' }}>
-                                        {product.product_stock && product.product_stock.length > 0 ? 
-                                            product.product_stock.reduce((total, stock) => total + stock.quantity_change, 0) 
-                                            : 0}
-                                    </td>
-                                    <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold flex" style={{ fontFamily: 'Helvetica, sans-serif' }}>
-                                        <button 
-                                            onClick={() => { setModalId(product.id); setShowModalEdit(true); }} 
-                                            className="text-blue-600 hover:text-blue-500"
-                                            aria-label="Edit"
-                                        >
-                                            <FaEdit />
-                                        </button>
-                                        <button 
-                                            onClick={() => deleteProduct(product.id)} 
-                                            className="text-red-600 hover:text-red-500" 
-                                            aria-label="Delete"
-                                        >
-                                            <FaTrash />
-                                        </button>
-                                    </td>
+                    <div className="w-full flex justify-center mt-16">
+                        <table className="border-collapse table-auto w-11/12 text-sm self-center">
+                            <thead>
+                                <tr>
+                                   
+                                    <th className="border-b text-base font-medium p-4 pl-8 text-slate-400 text-left">Kode Barang</th>
+                                    <th className="border-b text-base font-medium p-4 pl-8 text-slate-400 text-left">Category</th>
+                                    <th className="border-b text-base font-medium p-4 text-slate-400 text-left">Nama Barang</th>
+                                    <th className="border-b text-base font-medium p-4 text-slate-400 text-left">Jumlah Stok</th>
+                                    <th className="border-b text-base font-medium p-4 text-slate-400 text-left">Aksi</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {products.map((product, index) => (
+                                    <tr key={product.id} className="hover:bg-gray-50">
+                                       
+                                        <td className="border-b p-4 font-bold">{product.product_code}</td>
+                                        <td className="border-b p-4 font-bold">{product.product_category?.category_name || 'N/A'}</td>
+                                        <td className="border-b p-4 font-bold">{product.product_name}</td>
+                                        <td className="border-b p-4 font-bold">
+                                            {product.product_stock?.reduce((total, stock) => total + stock.quantity_change, 0) || 0}
+                                        </td>
+                                        <td className="border-b p-4 font-bold flex gap-4">
+                                            <button onClick={() => handleEditClick(product.id, product.product_stock?.reduce((total, stock) => total + stock.quantity_change, 0) || 0)}>
+                                                <FaEdit className="text-blue-500" />
+                                            </button>
+                                            <button onClick={() => deleteProduct(product.id)}>
+                                                <FaTrash className="text-red-500" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
 
-                <div className="flex justify-center mt-4">
-                    <button onClick={exportToExcel} className="py-2 px-4 bg-green-600 text-white rounded">
-                        <FaFileExcel className="inline-block mr-1" />
-                        Export to Excel
-                    </button>
+                    <div className="flex justify-between items-center w-11/12 mx-auto mt-4">
+                        <button onClick={exportToExcel} className="flex items-center text-white bg-green-500 px-4 py-2 rounded">
+                            <FaFileExcel className="mr-2" />
+                            Export to Excel
+                        </button>
+                        <ReactPaginate
+                            previousLabel={"< Prev"}
+                            nextLabel={"Next >"}
+                            breakLabel={"..."}
+                            pageCount={totalPage}
+                            marginPagesDisplayed={2}
+                            pageRangeDisplayed={5}
+                            onPageChange={changePage}
+                            containerClassName={"flex space-x-2"}
+                            pageClassName={"cursor-pointer"}
+                            previousClassName={"cursor-pointer"}
+                            nextClassName={"cursor-pointer"}
+                            activeClassName={"font-bold text-blue-500"}
+                        />
+                    </div>
                 </div>
-
-                {totalRow > 0 && (
-                    <ReactPaginate
-                        previousLabel={"<"}
-                        nextLabel={">"}
-                        breakLabel={"..."}
-                        pageCount={totalPage}
-                        marginPagesDisplayed={2}
-                        pageRangeDisplayed={5}
-                        onPageChange={changePage}
-                        containerClassName={"flex justify-center mt-4"}
-                        pageClassName={"mx-1"}
-                        pageLinkClassName={"px-3 py-1 border rounded"}
-                        activeLinkClassName={"bg-blue-500 text-white"}
-                        previousLinkClassName={"px-3 py-1 border rounded"}
-                        nextLinkClassName={"px-3 py-1 border rounded"}
-                    />
-                )}
-                {message && <p className="text-center text-gray-500 mt-4">{message}</p>}
-                <br></br><br></br>
             </div>
 
-
-            {showModalAdd && (
-                <AddProductModal 
-                    show={showModalAdd} 
-                    onClose={() => setShowModalAdd(false)} 
-                    onSubmit={handleAddProduct}
-                    visible={showModalAdd}
-                />
-            )}
-
+            {showModalAdd && <AddProductModal onClose={() => setShowModalAdd(false)} onAddProduct={handleAddProduct} />}
             {showModalEdit && (
                 <EditProductModal 
-                    show={showModalEdit} 
                     onClose={() => setShowModalEdit(false)} 
-                    onSubmit={handleEditProduct} 
-                    productId={modalId}
-                    visible={showModalEdit}
+                    onEditProduct={handleEditProduct} 
+                    initialQuantity={modalQuantityChange} 
                 />
             )}
-        </div>
         </Sidebar>
     );
 };
 
 export default Dashboard;
+
