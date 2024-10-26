@@ -1,4 +1,3 @@
-// CartSummary.js
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext'; // Pastikan path ini benar
 import { supabase } from '../supabaseClient'; // Pastikan path ini benar

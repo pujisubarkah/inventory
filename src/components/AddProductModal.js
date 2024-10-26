@@ -27,7 +27,7 @@ const AddProductModal = ({ visible, onClose }) => {
     }, []);
 
     const handleImageUpload = async (file) => {
-        const apiKey = 'bfd49879de15fa360d0c35da9ea4daa3'; // Replace with your ImgBB API Key
+        const apiKey = 'bfd49879de15fa360d0c35da9ea4daa3'; // Ganti dengan API Key ImgBB Anda
         const formData = new FormData();
         formData.append('image', file);
 

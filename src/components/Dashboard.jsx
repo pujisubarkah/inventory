@@ -26,15 +26,9 @@ const Dashboard = () => {
     const getProducts = async () => {
         try {
             const { data, error, count } = await supabase
-            .from('products')
-            .select(`
-                id,
-                product_name,
-                product_code,
-                product_stock(quantity_change),
-                product_category(category_name) 
-            `, { count: 'exact' })
-            .range(page * limit, (page + 1) * limit - 1);
+                .from('products')
+                .select('id, product_name, product_code, product_stock(quantity_change)', { count: 'exact' })
+                .range(page * limit, (page + 1) * limit - 1);
 
             if (error) throw error;
 
@@ -80,56 +74,67 @@ const Dashboard = () => {
     };
 
     const handleEditClick = (productId, quantity) => {
-        setModalId(productId);
-        setModalQuantityChange(quantity);
-        setShowModalEdit(true);
+        console.log("Selected productId:", productId);  // Debug log
+        setModalId(productId); // Set the selected product ID
+        setModalQuantityChange(quantity); // Set the initial quantity
+        setShowModalEdit(true); // Open the modal
     };
 
     const handleEditProduct = async (addedQuantity) => {
         if (!modalId) {
             console.error("Error: modalId is empty or undefined");
-            return;
+            return; // Prevent update if modalId is missing
         }
     
         try {
+            // Step 1: Fetch the current quantity_change value for the specified product
             const { data, error: fetchError } = await supabase
                 .from('product_stock')
                 .select('quantity_change')
                 .eq('product_id', modalId)
-                .single();
-
+                .single(); // Fetch only one record as each product has a unique entry in product_stock
+    
             if (fetchError) {
                 throw new Error(`Failed to fetch product stock for product_id ${modalId}: ${fetchError.message}`);
+
             }
     
+            // Check if data was returned; if not, it means product_id is missing in product_stock
             if (!data) {
                 console.error(`No stock entry found for product_id ${modalId}. Make sure the product exists in product_stock.`);
+
                 return;
             }
     
+            // Step 2: Calculate the new quantity_change by adding the added quantity
             const newQuantityChange = (data.quantity_change || 0) + addedQuantity;
     
+            // Step 3: Update the quantity_change in the database
             const { error: updateError } = await supabase
                 .from('product_stock')
                 .update({ quantity_change: newQuantityChange })
-                .eq('product_id', modalId);
+                .eq('product_id', modalId); // Use modalId here to target the correct product
     
             if (updateError) {
                 throw new Error(`Failed to update quantity_change for product_id ${modalId}: ${updateError.message}`);
+
             }
     
+            // Close the edit modal and refresh the product list after updating
             setShowModalEdit(false);
-            getProducts(); 
+            getProducts(); // Refresh product list
         } catch (error) {
             console.error('Error updating product stock:', error.message);
         }
     };
-
+    
+    
     const exportToExcel = () => {
         const worksheetData = products.map(product => ({
             'Name': product.product_name,
-            'Stock Quantity': product.product_stock?.reduce((total, stock) => total + stock.quantity_change, 0) || 0,
-            'Category': product.product_category?.category_name || 'N/A' 
+            'Stock Quantity': product.product_stock && product.product_stock.length > 0 ? 
+                product.product_stock.reduce((total, stock) => total + stock.quantity_change, 0) 
+                : 0,
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -166,12 +171,7 @@ const Dashboard = () => {
     if (!user) {
         return (
             <div className="flex flex-col items-center justify-center h-screen text-center p-4 w-full">
-                <img 
-                    src="https://img.freepik.com/premium-vector/mobile-login-flat-design-vector-illustration_1288538-7537.jpg?semt=ais_hybrid" 
-                    alt="Login required illustration" 
-                    className="w-1/2 mb-4" 
-                    style={{ marginBottom: '20px', maxWidth: '20%', height: 'auto', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} 
-                />
+                <img src="https://img.freepik.com/premium-vector/mobile-login-flat-design-vector-illustration_1288538-7537.jpg?semt=ais_hybrid" alt="Login required illustration" className="w-1/2 mb-4" style={{ marginBottom: '20px', maxWidth: '20%', height: 'auto', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
                 <p className="text-xl font-semibold">Anda harus login sebagai admin untuk mengakses dashboard</p>
             </div>
         );
@@ -196,7 +196,7 @@ const Dashboard = () => {
                         <table className="border-collapse table-auto w-11/12 text-sm self-center">
                             <thead>
                                 <tr>
-                                   
+                                    <th className="border-b text-base font-medium p-4 pl-8 text-slate-400 text-left">No</th>
                                     <th className="border-b text-base font-medium p-4 pl-8 text-slate-400 text-left">Kode Barang</th>
                                     <th className="border-b text-base font-medium p-4 pl-8 text-slate-400 text-left">Category</th>
                                     <th className="border-b text-base font-medium p-4 text-slate-400 text-left">Nama Barang</th>
@@ -207,19 +207,26 @@ const Dashboard = () => {
                             <tbody>
                                 {products.map((product, index) => (
                                     <tr key={product.id} className="hover:bg-gray-50">
-                                       
+                                        <td className="border-b p-4 font-bold">{index + 1}</td>
                                         <td className="border-b p-4 font-bold">{product.product_code}</td>
-                                        <td className="border-b p-4 font-bold">{product.product_category?.category_name || 'N/A'}</td>
                                         <td className="border-b p-4 font-bold">{product.product_name}</td>
                                         <td className="border-b p-4 font-bold">
-                                            {product.product_stock?.reduce((total, stock) => total + stock.quantity_change, 0) || 0}
+                                            {product.product_stock && product.product_stock.length > 0 ? 
+                                                product.product_stock.reduce((total, stock) => total + stock.quantity_change, 0) 
+                                                : 0}
                                         </td>
-                                        <td className="border-b p-4 font-bold flex gap-4">
-                                            <button onClick={() => handleEditClick(product.id, product.product_stock?.reduce((total, stock) => total + stock.quantity_change, 0) || 0)}>
-                                                <FaEdit className="text-blue-500" />
+                                        <td className="border-b p-4 font-bold flex">
+                                            <button 
+                                                onClick={() => handleEditClick(product.id, product.product_stock?.[0]?.quantity_change || 0)} 
+                                                className="text-blue-600 hover:text-blue-500"
+                                                aria-label="Edit">
+                                                <FaEdit />
                                             </button>
-                                            <button onClick={() => deleteProduct(product.id)}>
-                                                <FaTrash className="text-red-500" />
+                                            <button 
+                                                onClick={() => deleteProduct(product.id)} 
+                                                className="text-red-600 hover:text-red-500" 
+                                                aria-label="Delete">
+                                                <FaTrash />
                                             </button>
                                         </td>
                                     </tr>
@@ -228,40 +235,53 @@ const Dashboard = () => {
                         </table>
                     </div>
 
-                    <div className="flex justify-between items-center w-11/12 mx-auto mt-4">
-                        <button onClick={exportToExcel} className="flex items-center text-white bg-green-500 px-4 py-2 rounded">
-                            <FaFileExcel className="mr-2" />
-                            Export to Excel
-                        </button>
+                    <div className="flex justify-center mt-4">
+                        <button onClick={exportToExcel} className="py-2 px-4 bg-green-500 text-white rounded shadow">Export to Excel <FaFileExcel /></button>
+                    </div>
+
+                    <div className="flex justify-center mt-4">
                         <ReactPaginate
-                            previousLabel={"< Prev"}
-                            nextLabel={"Next >"}
+                            previousLabel={"<"}
+                            nextLabel={">"}
                             breakLabel={"..."}
                             pageCount={totalPage}
                             marginPagesDisplayed={2}
-                            pageRangeDisplayed={5}
+                            pageRangeDisplayed={3}
                             onPageChange={changePage}
-                            containerClassName={"flex space-x-2"}
-                            pageClassName={"cursor-pointer"}
-                            previousClassName={"cursor-pointer"}
-                            nextClassName={"cursor-pointer"}
-                            activeClassName={"font-bold text-blue-500"}
+                            containerClassName={"pagination"}
+                            pageClassName={"page-item"}
+                            pageLinkClassName={"page-link"}
+                            previousClassName={"page-item"}
+                            previousLinkClassName={"page-link"}
+                            nextClassName={"page-item"}
+                            nextLinkClassName={"page-link"}
+                            activeClassName={"active"}
                         />
                     </div>
+
+                    {/* Add Product Modal */}
+                    {showModalAdd && (
+                        <AddProductModal 
+                            onClose={() => setShowModalAdd(false)} 
+                            onAddProduct={handleAddProduct} 
+                            visible={true}
+                        />
+                    )}
+
+                    {/* Edit Product Modal */}
+                    {showModalEdit && (
+                        <EditProductModal 
+                            onClose={() => setShowModalEdit(false)} 
+                            onEditProduct={handleEditProduct} 
+                            productId={modalId}   // Pass modalId as productId
+                            quantityChange={modalQuantityChange} 
+                            visible={true}
+                        />
+                    )}
                 </div>
             </div>
-
-            {showModalAdd && <AddProductModal onClose={() => setShowModalAdd(false)} onAddProduct={handleAddProduct} />}
-            {showModalEdit && (
-                <EditProductModal 
-                    onClose={() => setShowModalEdit(false)} 
-                    onEditProduct={handleEditProduct} 
-                    initialQuantity={modalQuantityChange} 
-                />
-            )}
         </Sidebar>
     );
 };
 
-export default Dashboard;
-
+export default Dashboard; 
