@@ -45,11 +45,16 @@ const Selesai = () => {
     };
 
     const exportToExcel = () => {
-        const worksheetData = order.map(order => ({
-            'Produk': order.product_name,
-            'Jumlah Pesanan': order.quantity,
+        const worksheetData = filteredOrder.map((order, index) => ({
+            'No': page * limit + index + 1, // Adding the row number
+            'Tanggal': order.created_at.split('T')[0], // Extracting date
+            'Nama Pemesan': order.nama_lengkap,
+            'Unit Kerja': order.unit_kerja,
+            'Kode Barang': order.product_code,
+            'Nama Barang': order.product_name,
+            'Permintaan': order.quantity,
         }));
-
+        
         const worksheet = XLSX.utils.json_to_sheet(worksheetData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
