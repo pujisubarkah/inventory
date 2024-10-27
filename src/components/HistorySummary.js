@@ -1,5 +1,3 @@
-
-// HistorySummary.js
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
@@ -15,12 +13,13 @@ const HistorySummary = ({ onClose }) => {
             if (user) {
                 const { data, error } = await supabase
                     .from('user_cart_summary')
-                    .select('*')
+                    .select('*') // Ensure this includes product_id and final_quantity
                     .eq('user_id', user.id);
 
                 if (error) {
                     console.error('Error fetching cart items:', error.message);
                 } else {
+                    console.log('Fetched cart items:', data); // Log the fetched data
                     setCartItems(data);
                 }
             }
@@ -44,43 +43,46 @@ const HistorySummary = ({ onClose }) => {
     };
 
     const handleCompleteItem = async (itemId) => {
-        console.log('Completing item with ID:', itemId); // Log item ID
+        console.log('Completing item with ID:', itemId);
 
         if (!itemId) {
             console.error('Item ID is undefined');
-            return; // Prevent further execution
+            return;
         }
 
         // Find the item to get its details
         const itemToComplete = cartItems.find(item => item.id === itemId);
         if (!itemToComplete) {
             console.error('Item not found in cartItems');
-            return; // Stop execution if item is not found
+            return; 
         }
+
+        // Log the item details to ensure product_id is present
+        console.log('Completing item:', itemToComplete);
 
         // Insert the completed item into the completed_cart table
         const { error: insertError } = await supabase
             .from('completed_cart')
             .insert([{ 
                 user_id: user.id, 
-                product_id: itemToComplete.product_id, // Use the product_id from the item
-                quantity: itemToComplete.quantity // Include quantity
+                product_id: itemToComplete.product_id, 
+                quantity: itemToComplete.final_quantity 
             }]);
 
         if (insertError) {
             console.error('Error inserting into completed_cart:', insertError.message);
-            return; // Stop execution if there's an error
+            return; 
         }
 
         // Delete the completed item from cart_product using product_id
         const { error: deleteError } = await supabase
             .from('cart_product')
             .delete()
-            .eq('id', itemId); // Use the itemId to delete
+            .eq('id', itemId); 
 
         if (deleteError) {
             console.error('Error deleting items from cart_product:', deleteError.message);
-            return; // Stop execution if there's an error
+            return; 
         }
 
         // Fetch the updated cart items from user_cart_summary
@@ -92,7 +94,7 @@ const HistorySummary = ({ onClose }) => {
         if (fetchError) {
             console.error('Error fetching updated cart items:', fetchError.message);
         } else {
-            setCartItems(updatedData); // Update the cartItems after deleting the completed item
+            setCartItems(updatedData);
         }
     };
 
@@ -126,19 +128,22 @@ const HistorySummary = ({ onClose }) => {
                                 </thead>
                                 <tbody>
                                     {cartItems.filter(item => item.status !== 'selesai').map((item, index) => (
-                                        <tr key={item.id}> {/* Ensure the key is unique */}
+                                        <tr key={item.id}>
                                             <td className="border px-2 py-1">{index + 1}</td>
                                             <td className="border px-2 py-1">{item.product_code}</td>
                                             <td className="border px-2 py-1">{item.product_name}</td>
-                                            <td className="border px-2 py-1">{item.quantity}</td>
+                                            <td className="border px-2 py-1">{item.final_quantity}</td> {/* Changed here */}
                                             <td className="border px-2 py-1">{item.status}</td>
                                             <td className="border px-2 py-1">
-                                                <button 
-                                                    onClick={() => handleCompleteItem(item.id)} // Pass the correct item id
-                                                    className="bg-green-500 text-white py-1 px-2 rounded"
-                                                >
-                                                    Selesai
-                                                </button>
+                                                {/* Show button for "silakan diambil" and "selesai" statuses */}
+                                                {item.status === 'Silakan Diambil' || item.status === 'Selesai' ? (
+                                                    <button 
+                                                        onClick={() => handleCompleteItem(item.id)}
+                                                        className="bg-green-500 text-white py-1 px-2 rounded"
+                                                    >
+                                                        Selesai
+                                                    </button>
+                                                ) : null}
                                             </td>
                                         </tr>
                                     ))}

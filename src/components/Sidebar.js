@@ -42,23 +42,31 @@ const Sidebar = ({ children }) => {
               <ul className='pt-6'>
                 <NavLink to='/dashboard'>
                   <li className={`flex text-black items-center gap-x-4 cursor-pointer p-4 hover:bg-red-400 rounded m-3`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-                    </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5L12 3l9 7.5V21H3V10.5z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 21h6v-6H9v6z" />
+</svg>
                     <p className={`${!open && "hidden"} text-black font-medium px-4 origin-left duration-200`}>Stock Persediaan</p>
                   </li>
                 </NavLink>
 
                 <NavLink to='/pesanan'>
                   <li className={`flex text-black items-center gap-x-4 cursor-pointer p-4 hover:bg-red-400 rounded m-3`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                    </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l1 9h12l1-9h2M3 3l1 9m0 0h2m-2 0h4m0 0h12m0 0h2M7 21a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4z" />
+</svg>
                     <p className={`${!open && "hidden"} font-medium px-4 origin-left duration-200`}>Daftar Pesanan</p>
                   </li>
                 </NavLink>
-              
 
+                <NavLink to='/selesai'>
+                  <li className={`flex text-black items-center gap-x-4 cursor-pointer p-4 hover:bg-red-400 rounded m-3`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 12.75l6 6 6-6M5.25 6.75l6 6 6-6" />
+                    </svg>
+                    <p className={`${!open && "hidden"} font-medium px-4 origin-left duration-200`}>Barang Selesai Diorder</p>
+                  </li>
+                </NavLink>
               </ul>
             </div>
             {/* End Sidebar */}

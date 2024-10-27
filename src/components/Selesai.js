@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from '../supabaseClient';
 import ReactPaginate from "react-paginate";
 import * as XLSX from 'xlsx'; 
-import { FaFileExcel, FaSearch } from 'react-icons/fa'; 
-import { FaBell } from 'react-icons/fa';
+import { FaFileExcel, FaSearch, FaBell } from 'react-icons/fa';
 import Sidebar from "./Sidebar";
 
 const Selesai = () => {
@@ -15,7 +14,7 @@ const Selesai = () => {
     const [totalRow, setTotalRow] = useState(0);
     const [message, setMessage] = useState("");
     const [notificationCount, setNotificationCount] = useState(0);
-    const [searchQuery, setSearchQuery] = useState(''); // State for search query
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         getOrder();
@@ -26,7 +25,7 @@ const Selesai = () => {
         try {
             const { data, error, count } = await supabase
                 .from('completed_cart_view')
-                .select('*')
+                .select('*', { count: 'exact' })
                 .range(page * limit, (page + 1) * limit - 1);
 
             if (error) throw error;
@@ -49,7 +48,7 @@ const Selesai = () => {
 
             setStatus(data);
         } catch (error) {
-            console.error('Error fetching order:', error.message);
+            console.error('Error fetching status:', error.message);
         }
     };
 
@@ -152,7 +151,6 @@ const Selesai = () => {
                         )}
                     </div>
 
-                    {/* Search Bar */}
                     <form onSubmit={handleSearchSubmit} className="flex items-center space-x-2">
                         <input
                             type="text"
@@ -179,13 +177,12 @@ const Selesai = () => {
                                     <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Kode Barang</th>
                                     <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Nama Barang</th>
                                     <th className="border-b text-base dark:border-slate-600 font-medium p-4 text-slate-400 dark:text-slate-200 text-left">Permintaan</th>
-           
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredOrder.map((order, index) => (
                                     <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
-                                        <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold">{index + 1}</td>
+                                        <td className="border-b p-4 font-bold">{page * limit + index + 1}</td>
                                         <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold">{order.created_at.split('T')[0]}</td>
                                         <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold">{order.nama_lengkap}</td>
                                         <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold">{order.unit_kerja}</td>
