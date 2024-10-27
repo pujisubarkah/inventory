@@ -1,3 +1,4 @@
+// HistorySummary.js
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
@@ -15,7 +16,7 @@ const HistorySummary = ({ onClose }) => {
                     .from('user_cart_summary')
                     .select('*') // Ensure this includes product_id and final_quantity
                     .eq('user_id', user.id);
-
+    
                 if (error) {
                     console.error('Error fetching cart items:', error.message);
                 } else {
@@ -25,9 +26,16 @@ const HistorySummary = ({ onClose }) => {
             }
             setLoading(false);
         };
-
+    
         fetchItems();
     }, [user]);
+
+
+    console.log('Cart Items:', cartItems);
+    cartItems.forEach(item => {
+    console.log('Item:', item);
+    console.log('product_id:', item.product_id); // Check if this is defined
+});
 
     const downloadPDF = () => {
         const element = document.getElementById('cart-summary');
@@ -54,10 +62,18 @@ const HistorySummary = ({ onClose }) => {
         const itemToComplete = cartItems.find(item => item.id === itemId);
         if (!itemToComplete) {
             console.error('Item not found in cartItems');
-            return; 
+            return;
         }
 
-        // Log the item details to ensure product_id is present
+        // Log the product_id
+    console.log('product_id:', itemToComplete.product_id); // Corrected line
+
+        // Ensure product_id is defined before attempting to insert
+        if (!itemToComplete.product_id) {
+            console.error('product_id is null or undefined');
+            return;
+        }
+
         console.log('Completing item:', itemToComplete);
 
         // Insert the completed item into the completed_cart table
@@ -65,24 +81,24 @@ const HistorySummary = ({ onClose }) => {
             .from('completed_cart')
             .insert([{ 
                 user_id: user.id, 
-                product_id: itemToComplete.product_id, 
-                quantity: itemToComplete.final_quantity 
+                product_id: itemToComplete.product_id, // Use the product_id from the item
+                quantity: itemToComplete.final_quantity // Use final_quantity instead of quantity
             }]);
 
         if (insertError) {
             console.error('Error inserting into completed_cart:', insertError.message);
-            return; 
+            return;
         }
 
         // Delete the completed item from cart_product using product_id
         const { error: deleteError } = await supabase
             .from('cart_product')
             .delete()
-            .eq('id', itemId); 
+            .eq('id', itemId); // Use the itemId to delete
 
         if (deleteError) {
             console.error('Error deleting items from cart_product:', deleteError.message);
-            return; 
+            return;
         }
 
         // Fetch the updated cart items from user_cart_summary
@@ -132,10 +148,9 @@ const HistorySummary = ({ onClose }) => {
                                             <td className="border px-2 py-1">{index + 1}</td>
                                             <td className="border px-2 py-1">{item.product_code}</td>
                                             <td className="border px-2 py-1">{item.product_name}</td>
-                                            <td className="border px-2 py-1">{item.final_quantity}</td> {/* Changed here */}
+                                            <td className="border px-2 py-1">{item.final_quantity}</td>
                                             <td className="border px-2 py-1">{item.status}</td>
                                             <td className="border px-2 py-1">
-                                                {/* Show button for "silakan diambil" and "selesai" statuses */}
                                                 {item.status === 'Silakan Diambil' || item.status === 'Selesai' ? (
                                                     <button 
                                                         onClick={() => handleCompleteItem(item.id)}

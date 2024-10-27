@@ -2,23 +2,20 @@ import React, { useEffect, useState } from "react";
 import { supabase } from '../supabaseClient';
 import ReactPaginate from "react-paginate";
 import * as XLSX from 'xlsx'; 
-import { FaFileExcel, FaSearch, FaBell } from 'react-icons/fa';
+import { FaFileExcel, FaSearch } from 'react-icons/fa';
 import Sidebar from "./Sidebar";
 
 const Selesai = () => {
     const [order, setOrder] = useState([]);
-    const [status, setStatus] = useState([]);
     const [page, setPage] = useState(0);
     const [limit, setLimit] = useState(10);
     const [totalPage, setTotalPage] = useState(0);
     const [totalRow, setTotalRow] = useState(0);
     const [message, setMessage] = useState("");
-    const [notificationCount, setNotificationCount] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         getOrder();
-        getStatus();
     }, [page]);
 
     const getOrder = async () => {
@@ -35,20 +32,6 @@ const Selesai = () => {
             setTotalPage(Math.ceil(count / limit));
         } catch (error) {
             console.error('Error fetching order:', error.message);
-        }
-    };
-
-    const getStatus = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('order_status')
-                .select('*');
-
-            if (error) throw error;
-
-            setStatus(data);
-        } catch (error) {
-            console.error('Error fetching status:', error.message);
         }
     };
 
@@ -109,28 +92,13 @@ const Selesai = () => {
             </div>
         );
     }
-    
-    const handleQuantityChange = async (itemId, newQuantity) => {
-        const { error } = await supabase
-            .from('cart_product')
-            .update({ final_quantity: newQuantity })
-            .eq('id', itemId);
-
-        if (error) {
-            console.error('Error updating quantity:', error.message);
-            alert('Gagal mengubah jumlah: ' + error.message);
-        } else {
-            setOrder(order.map(item => item.id === itemId ? { ...item, final_quantity: newQuantity } : item));
-        }
-    };
 
     const handleSearch = (e) => {
         setSearchQuery(e.target.value);
     };
-    
+
     const handleSearchSubmit = (e) => {
         e.preventDefault();
-        console.log('Search for:', searchQuery);
         setSearchQuery('');
     };
 
@@ -141,16 +109,8 @@ const Selesai = () => {
     return (
         <Sidebar>
             <div className="p-4 w-full">
+                <h1 className="text-2xl font-bold mb-4 text-center">Daftar Permintaan Barang</h1>
                 <div className="flex justify-end mb-4 space-x-4">
-                    <div className="relative">
-                        <FaBell className="h-6 w-6 text-gray-700" />
-                        {notificationCount > 0 && (
-                            <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                                {notificationCount}
-                            </span>
-                        )}
-                    </div>
-
                     <form onSubmit={handleSearchSubmit} className="flex items-center space-x-2">
                         <input
                             type="text"
@@ -189,42 +149,6 @@ const Selesai = () => {
                                         <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold">{order.product_code}</td>
                                         <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold">{order.product_name}</td>
                                         <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold">{order.quantity}</td>
-                                        <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold">
-                                            <input
-                                                type="number"
-                                                value={order.final_quantity}
-                                                onChange={(e) => handleQuantityChange(order.id, e.target.value)}
-                                                className="w-full text-left"
-                                            />
-                                        </td>
-                                        <td className="border-b border-slate-100 dark:border-slate-700 p-4 text-black font-bold">
-                                            <select
-                                                value={order.status}
-                                                onChange={async (e) => {
-                                                    const newStatus = e.target.value;
-                                                    const statusOption = status.find(option => option.status === newStatus);
-                                                    const newStatusId = statusOption ? statusOption.id : null;
-                                                    const { error } = await supabase
-                                                        .from('cart_product')
-                                                        .update({ status_id: newStatusId })
-                                                        .eq('id', order.id);
-
-                                                    if (error) {
-                                                        console.error('Error updating status:', error.message);
-                                                        alert('Gagal mengubah status: ' + error.message);
-                                                    } else {
-                                                        setOrder(filteredOrder.map(item => item.id === order.id ? { ...item, status: newStatus } : item));
-                                                    }
-                                                }}
-                                                className="w-full text-left"
-                                            >
-                                                {status.map((statusOption) => (
-                                                    <option key={statusOption.id} value={statusOption.status}>
-                                                        {statusOption.status}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
