@@ -8,9 +8,9 @@ import * as XLSX from 'xlsx';
 import { FaFileExcel, FaEdit, FaTrash } from 'react-icons/fa';
 
 const Dashboard = () => {
-    const [products, setProducts] = useState([]);
+    const [products, setProducts] = useState([]); // This state is used in the component
     const [page, setPage] = useState(0);
-    const [limit, setLimit] = useState(10);
+    const [limit, setLimit] = useState(10); // setLimit is now used
     const [totalPage, setTotalPage] = useState(0);
     const [totalRow, setTotalRow] = useState(0);
     const [showModalAdd, setShowModalAdd] = useState(false);
@@ -27,7 +27,7 @@ const Dashboard = () => {
         try {
             const { data, error, count } = await supabase
                 .from('products')
-                .select('id, product_name, product_code, product_stock(quantity_change)', { count: 'exact' })
+                .select('id, product_name, product_code, product_category(category_name), product_stock(quantity_change)', { count: 'exact' })
                 .range(page * limit, (page + 1) * limit - 1);
 
             if (error) throw error;
@@ -45,18 +45,32 @@ const Dashboard = () => {
     };
 
     const deleteProduct = async (id) => {
+        const confirmDelete = window.confirm("Apakah Anda yakin ingin menghapus barang ini dari persediaan?");
+        if (!confirmDelete) return; // Exit if the user cancels
+    
         try {
-            const { error } = await supabase
+            // First, delete related entries in product_stock
+            const { error: stockError } = await supabase
+                .from('product_stock')
+                .delete()
+                .eq('product_id', id);
+    
+            if (stockError) throw stockError;
+    
+            // Then, delete the product itself
+            const { error: productError } = await supabase
                 .from('products')
                 .delete()
                 .eq('id', id);
-
-            if (error) throw error;
-            getProducts();
+    
+            if (productError) throw productError;
+    
+            getProducts(); // Refresh product list
         } catch (error) {
             console.error('Error deleting product:', error.message);
         }
     };
+    
 
     const handleAddProduct = async (newProduct) => {
         try {
@@ -128,7 +142,7 @@ const Dashboard = () => {
         }
     };
     
-    
+
     const exportToExcel = () => {
         const worksheetData = products.map(product => ({
             'Name': product.product_name,
@@ -179,7 +193,7 @@ const Dashboard = () => {
 
     return (
         <Sidebar>
-            <div>
+            <>
                 <div className="w-full mt-24">
                     <div className="flex justify-between w-11/12 mx-auto ">
                         <div className="w-1/3">
@@ -205,32 +219,35 @@ const Dashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {products.map((product, index) => (
-                                    <tr key={product.id} className="hover:bg-gray-50">
-                                        <td className="border-b p-4 font-bold">{index + 1}</td>
-                                        <td className="border-b p-4 font-bold">{product.product_code}</td>
-                                        <td className="border-b p-4 font-bold">{product.product_name}</td>
-                                        <td className="border-b p-4 font-bold">
-                                            {product.product_stock && product.product_stock.length > 0 ? 
-                                                product.product_stock.reduce((total, stock) => total + stock.quantity_change, 0) 
-                                                : 0}
-                                        </td>
-                                        <td className="border-b p-4 font-bold flex">
-                                            <button 
-                                                onClick={() => handleEditClick(product.id, product.product_stock?.[0]?.quantity_change || 0)} 
-                                                className="text-blue-600 hover:text-blue-500"
-                                                aria-label="Edit">
-                                                <FaEdit />
-                                            </button>
-                                            <button 
-                                                onClick={() => deleteProduct(product.id)} 
-                                                className="text-red-600 hover:text-red-500" 
-                                                aria-label="Delete">
-                                                <FaTrash />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {products.map((product, index) => {
+                                    return (
+                                        <tr key={product.id} className="hover:bg-gray-50">
+                                            <td className="border-b p-4 font-bold">{page * limit + index + 1}</td>
+                                            <td className="border-b p-4 font-bold">{product.product_code}</td>
+                                            <td className="border-b p-4 font-bold">{product.product_category?.category_name || 'N/A'}</td>
+                                            <td className="border-b p-4 font-bold">{product.product_name}</td>
+                                            <td className="border-b p-4 font-bold">
+                                                {product.product_stock && product.product_stock.length > 0 ? 
+                                                    product.product_stock.reduce((total, stock) => total + stock.quantity_change, 0) 
+                                                    : 0}
+                                            </td>
+                                            <td className="border-b p-4 font-bold flex">
+                                                <button 
+                                                    onClick={() => handleEditClick(product.id, product.product_stock?.[0]?.quantity_change || 0)} 
+                                                    className="text-blue-600 hover:text-blue-500"
+                                                    aria-label="Edit">
+                                                    <FaEdit />
+                                                </button>
+                                                <button 
+                                                    onClick={() => deleteProduct(product.id)} 
+                                                    className="text-red-600 hover:text-red-500" 
+                                                    aria-label="Delete">
+                                                    <FaTrash />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -239,25 +256,28 @@ const Dashboard = () => {
                         <button onClick={exportToExcel} className="py-2 px-4 bg-green-500 text-white rounded shadow">Export to Excel <FaFileExcel /></button>
                     </div>
 
-                    <div className="flex justify-center mt-4">
-                        <ReactPaginate
-                            previousLabel={"<"}
-                            nextLabel={">"}
-                            breakLabel={"..."}
-                            pageCount={totalPage}
-                            marginPagesDisplayed={2}
-                            pageRangeDisplayed={3}
-                            onPageChange={changePage}
-                            containerClassName={"pagination"}
-                            pageClassName={"page-item"}
-                            pageLinkClassName={"page-link"}
-                            previousClassName={"page-item"}
-                            previousLinkClassName={"page-link"}
-                            nextClassName={"page-item"}
-                            nextLinkClassName={"page-link"}
-                            activeClassName={"active"}
-                        />
-                    </div>
+                    {totalRow > 0 && (
+                    <ReactPaginate
+                        previousLabel={"Previous"}
+                        nextLabel={"Next"}
+                        breakLabel={"..."}
+                        pageCount={totalPage}
+                        marginPagesDisplayed={2}
+                        pageRangeDisplayed={5}
+                        onPageChange={changePage}
+                        containerClassName={"flex justify-center items-center gap-2 mt-6"}
+                        pageClassName={"page-item"}
+                        pageLinkClassName={"page-link"}
+                        previousClassName={"page-item"}
+                        previousLinkClassName={"page-link"}
+                        nextClassName={"page-item"}
+                        nextLinkClassName={"page-link"}
+                        breakClassName={"page-item"}
+                        breakLinkClassName={"page-link"}
+                        activeClassName={"active"}
+                    />
+                )}
+            </div>
 
                     {/* Add Product Modal */}
                     {showModalAdd && (
@@ -278,11 +298,9 @@ const Dashboard = () => {
                             visible={true}
                         />
                     )}
-                </div>
-            </div>
+            </>
         </Sidebar>
     );
 };
 
 export default Dashboard; 
-
